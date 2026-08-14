@@ -201,6 +201,13 @@ func (Account) Fields() []ent.Field {
 			Comment("Parent account id for a linked spark shadow (NULL = normal)."),
 		field.Enum("quota_dimension").Values("global", "spark").Default("global").
 			Comment("'global' (default) or 'spark' (shadow reads codex_bengalfox)."),
+
+		// owner_id: 供应商归属用户 ID（NULL = 平台托管账号，兼容存量数据）
+		// 供应商角色登录后只能看到/操作 owner_id = 自己的账号
+		field.Int64("owner_id").
+			Optional().
+			Nillable().
+			Comment("Supplier user id who owns this upstream account; NULL = platform-managed."),
 	}
 }
 
@@ -249,5 +256,6 @@ func (Account) Indexes() []ent.Index {
 		index.Fields("priority", "status"),
 		index.Fields("deleted_at"), // 软删除查询优化
 		index.Fields("parent_account_id"),
+		index.Fields("owner_id"), // 供应商按归属过滤
 	}
 }

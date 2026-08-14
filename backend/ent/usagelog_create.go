@@ -637,6 +637,20 @@ func (_c *UsageLogCreate) SetNillableCreatedAt(v *time.Time) *UsageLogCreate {
 	return _c
 }
 
+// SetAccountOwnerID sets the "account_owner_id" field.
+func (_c *UsageLogCreate) SetAccountOwnerID(v int64) *UsageLogCreate {
+	_c.mutation.SetAccountOwnerID(v)
+	return _c
+}
+
+// SetNillableAccountOwnerID sets the "account_owner_id" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableAccountOwnerID(v *int64) *UsageLogCreate {
+	if v != nil {
+		_c.SetAccountOwnerID(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *UsageLogCreate) SetUser(v *User) *UsageLogCreate {
 	return _c.SetUserID(v.ID)
@@ -1134,6 +1148,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(usagelog.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if value, ok := _c.mutation.AccountOwnerID(); ok {
+		_spec.SetField(usagelog.FieldAccountOwnerID, field.TypeInt64, value)
+		_node.AccountOwnerID = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -2079,6 +2097,30 @@ func (u *UsageLogUpsert) SetCacheTTLOverridden(v bool) *UsageLogUpsert {
 // UpdateCacheTTLOverridden sets the "cache_ttl_overridden" field to the value that was provided on create.
 func (u *UsageLogUpsert) UpdateCacheTTLOverridden() *UsageLogUpsert {
 	u.SetExcluded(usagelog.FieldCacheTTLOverridden)
+	return u
+}
+
+// SetAccountOwnerID sets the "account_owner_id" field.
+func (u *UsageLogUpsert) SetAccountOwnerID(v int64) *UsageLogUpsert {
+	u.Set(usagelog.FieldAccountOwnerID, v)
+	return u
+}
+
+// UpdateAccountOwnerID sets the "account_owner_id" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateAccountOwnerID() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldAccountOwnerID)
+	return u
+}
+
+// AddAccountOwnerID adds v to the "account_owner_id" field.
+func (u *UsageLogUpsert) AddAccountOwnerID(v int64) *UsageLogUpsert {
+	u.Add(usagelog.FieldAccountOwnerID, v)
+	return u
+}
+
+// ClearAccountOwnerID clears the value of the "account_owner_id" field.
+func (u *UsageLogUpsert) ClearAccountOwnerID() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldAccountOwnerID)
 	return u
 }
 
@@ -3069,6 +3111,34 @@ func (u *UsageLogUpsertOne) SetCacheTTLOverridden(v bool) *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) UpdateCacheTTLOverridden() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.UpdateCacheTTLOverridden()
+	})
+}
+
+// SetAccountOwnerID sets the "account_owner_id" field.
+func (u *UsageLogUpsertOne) SetAccountOwnerID(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetAccountOwnerID(v)
+	})
+}
+
+// AddAccountOwnerID adds v to the "account_owner_id" field.
+func (u *UsageLogUpsertOne) AddAccountOwnerID(v int64) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddAccountOwnerID(v)
+	})
+}
+
+// UpdateAccountOwnerID sets the "account_owner_id" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateAccountOwnerID() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateAccountOwnerID()
+	})
+}
+
+// ClearAccountOwnerID clears the value of the "account_owner_id" field.
+func (u *UsageLogUpsertOne) ClearAccountOwnerID() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearAccountOwnerID()
 	})
 }
 
@@ -4225,6 +4295,34 @@ func (u *UsageLogUpsertBulk) SetCacheTTLOverridden(v bool) *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) UpdateCacheTTLOverridden() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.UpdateCacheTTLOverridden()
+	})
+}
+
+// SetAccountOwnerID sets the "account_owner_id" field.
+func (u *UsageLogUpsertBulk) SetAccountOwnerID(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetAccountOwnerID(v)
+	})
+}
+
+// AddAccountOwnerID adds v to the "account_owner_id" field.
+func (u *UsageLogUpsertBulk) AddAccountOwnerID(v int64) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.AddAccountOwnerID(v)
+	})
+}
+
+// UpdateAccountOwnerID sets the "account_owner_id" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateAccountOwnerID() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateAccountOwnerID()
+	})
+}
+
+// ClearAccountOwnerID clears the value of the "account_owner_id" field.
+func (u *UsageLogUpsertBulk) ClearAccountOwnerID() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearAccountOwnerID()
 	})
 }
 

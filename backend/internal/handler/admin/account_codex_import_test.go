@@ -633,7 +633,7 @@ func TestImportCodexSessionsAccessTokenOnlySameWorkspaceDifferentUsersCreatesTwo
 		{Index: 2, Value: buildCodexAccessOnlyImportValue(t, "workspace-1", "user-2")},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}
@@ -673,7 +673,7 @@ func TestImportCodexSessionsAccessTokenOnlySameWorkspaceAndUserDifferentTokensCr
 		}},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}
@@ -705,7 +705,7 @@ func TestImportCodexSessionsAccessTokenOnlySameUserUpdatesExisting(t *testing.T)
 		{Index: 1, Value: map[string]any{"access_token": existingToken}},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}
@@ -746,7 +746,7 @@ func TestImportCodexSessionsUpgradesAccessTokenOnlyAccountWithRefreshToken(t *te
 		}},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}
@@ -782,7 +782,7 @@ func TestImportCodexSessionsAccessTokenOnlyPreservesExistingRefreshToken(t *test
 		{Index: 1, Value: map[string]any{"access_token": existingToken}},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}
@@ -829,7 +829,7 @@ func TestImportCodexSessionsBatchOldAccessTokenDoesNotRollbackRefreshToken(t *te
 		{Index: 2, Value: map[string]any{"access_token": oldToken}},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}
@@ -871,7 +871,7 @@ func TestImportCodexSessionsWithRefreshTokenKeepsExistingDedup(t *testing.T) {
 		{Index: 1, Value: buildCodexRefreshImportValue(t, "workspace-1", "user-1", "refresh-new")},
 	}
 
-	result, err := handler.importCodexSessions(context.Background(), req, entries)
+	result, err := handler.importCodexSessions(context.Background(), req, entries, nil)
 	if err != nil {
 		t.Fatalf("importCodexSessions error = %v", err)
 	}

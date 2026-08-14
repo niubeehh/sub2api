@@ -375,9 +375,11 @@ import { useClipboard } from '@/composables/useClipboard'
 import { buildApiUrl } from '@/api/client'
 import { ADMIN_UI_REQUEST_HEADER } from '@/api/adminUIRequest'
 import { adminAPI } from '@/api/admin'
+import { useAuthStore } from '@/stores/auth'
 import type { Account, ClaudeModel } from '@/types'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 const { copyToClipboard } = useClipboard()
 
 interface OutputLine {
@@ -878,7 +880,11 @@ const startTest = async () => {
     }
 
     // Use the configured API base; EventSource does not support POST.
-    const url = buildApiUrl(`/admin/accounts/${props.account.id}/test`)
+    // 供应商用户：将 /admin/accounts 重写为 /supplier/accounts
+    const apiPath = authStore.isSupplier
+      ? `/supplier/accounts/${props.account.id}/test`
+      : `/admin/accounts/${props.account.id}/test`
+    const url = buildApiUrl(apiPath)
 
     // Use fetch with streaming for SSE since EventSource doesn't support POST
     const response = await fetch(url, {

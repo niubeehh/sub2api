@@ -564,6 +564,33 @@ func (_u *AccountUpdate) SetNillableQuotaDimension(v *account.QuotaDimension) *A
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *AccountUpdate) SetOwnerID(v int64) *AccountUpdate {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableOwnerID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *AccountUpdate) AddOwnerID(v int64) *AccountUpdate {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *AccountUpdate) ClearOwnerID() *AccountUpdate {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_u *AccountUpdate) AddGroupIDs(ids ...int64) *AccountUpdate {
 	_u.mutation.AddGroupIDs(ids...)
@@ -945,6 +972,15 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.QuotaDimension(); ok {
 		_spec.SetField(account.FieldQuotaDimension, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(account.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(account.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(account.FieldOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1704,6 +1740,33 @@ func (_u *AccountUpdateOne) SetNillableQuotaDimension(v *account.QuotaDimension)
 	return _u
 }
 
+// SetOwnerID sets the "owner_id" field.
+func (_u *AccountUpdateOne) SetOwnerID(v int64) *AccountUpdateOne {
+	_u.mutation.ResetOwnerID()
+	_u.mutation.SetOwnerID(v)
+	return _u
+}
+
+// SetNillableOwnerID sets the "owner_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableOwnerID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetOwnerID(*v)
+	}
+	return _u
+}
+
+// AddOwnerID adds value to the "owner_id" field.
+func (_u *AccountUpdateOne) AddOwnerID(v int64) *AccountUpdateOne {
+	_u.mutation.AddOwnerID(v)
+	return _u
+}
+
+// ClearOwnerID clears the value of the "owner_id" field.
+func (_u *AccountUpdateOne) ClearOwnerID() *AccountUpdateOne {
+	_u.mutation.ClearOwnerID()
+	return _u
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_u *AccountUpdateOne) AddGroupIDs(ids ...int64) *AccountUpdateOne {
 	_u.mutation.AddGroupIDs(ids...)
@@ -2115,6 +2178,15 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	}
 	if value, ok := _u.mutation.QuotaDimension(); ok {
 		_spec.SetField(account.FieldQuotaDimension, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.OwnerID(); ok {
+		_spec.SetField(account.FieldOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerID(); ok {
+		_spec.AddField(account.FieldOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.OwnerIDCleared() {
+		_spec.ClearField(account.FieldOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{

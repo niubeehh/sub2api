@@ -428,6 +428,20 @@ func (s *stubAdminService) ListAccounts(ctx context.Context, page, pageSize int,
 	return accounts[start:end], int64(total), nil
 }
 
+func (s *stubAdminService) ListAccountsByOwner(ctx context.Context, ownerID int64, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string, sortBy, sortOrder string) ([]service.Account, int64, error) {
+	if ownerID <= 0 {
+		return []service.Account{}, 0, nil
+	}
+	return s.ListAccounts(ctx, page, pageSize, platform, accountType, status, search, groupID, privacyMode, sortBy, sortOrder)
+}
+
+func (s *stubAdminService) ListAllAccountsByOwner(_ context.Context, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, error) {
+	if ownerID <= 0 {
+		return nil, nil
+	}
+	return s.accounts, nil
+}
+
 func (s *stubAdminService) ListAccountsForSchedulerScoreFilter(_ context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, error) {
 	s.schedulerScoreFilterCalls++
 	if s.accountSchedulerScoreFilterAccounts != nil {

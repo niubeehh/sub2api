@@ -48,6 +48,19 @@ func TestAdminService_CreateUser_InvalidRoleRejected(t *testing.T) {
 	require.Empty(t, repo.created, "非法角色不应写入用户")
 }
 
+func TestAdminService_CreateUser_WithSupplierRole(t *testing.T) {
+	repo := &userRepoStub{nextID: 33}
+	svc := &adminServiceImpl{userRepo: repo}
+
+	user, err := svc.CreateUser(context.Background(), &CreateUserInput{
+		Email:    "supplier@test.com",
+		Password: "strong-pass",
+		Role:     RoleSupplier,
+	})
+	require.NoError(t, err)
+	require.Equal(t, RoleSupplier, user.Role)
+}
+
 func TestAdminService_UpdateUser_PromoteToAdmin(t *testing.T) {
 	base := &userRepoStub{user: &User{ID: 42, Email: "u@example.com", Role: RoleUser}}
 	repo := &rpmUserRepoStub{userRepoStub: base}

@@ -12,8 +12,9 @@ const (
 
 // Role constants
 const (
-	RoleAdmin = "admin"
-	RoleUser  = "user"
+	RoleAdmin    = "admin"
+	RoleUser     = "user"
+	RoleSupplier = "supplier" // 供应商角色：提供上游账号，可观测自己名下账号的消耗
 )
 
 // Platform constants

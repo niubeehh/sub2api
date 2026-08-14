@@ -98,6 +98,12 @@ func (m *mockAccountRepoForPlatform) ListWithFilters(ctx context.Context, params
 func (m *mockAccountRepoForPlatform) ListAllWithFilters(ctx context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error) {
 	return nil, nil
 }
+func (m *mockAccountRepoForPlatform) ListByOwnerWithFilters(ctx context.Context, params pagination.PaginationParams, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, *pagination.PaginationResult, error) {
+	return nil, nil, nil
+}
+func (m *mockAccountRepoForPlatform) ListAllByOwnerWithFilters(ctx context.Context, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error) {
+	return nil, nil
+}
 func (m *mockAccountRepoForPlatform) ListByGroup(ctx context.Context, groupID int64) ([]Account, error) {
 	return nil, nil
 }

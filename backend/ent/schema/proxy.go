@@ -64,6 +64,11 @@ func (Proxy) Fields() []ent.Field {
 		field.Int("expiry_warn_days").
 			Default(7).
 			Comment("Days before expiry to flag as expiring-soon (per proxy)."),
+		// owner_id 供应商归属：NULL = 平台托管代理，供应商创建的代理归属供应商。
+		field.Int64("owner_id").
+			Optional().
+			Nillable().
+			Comment("代理归属供应商 ID（NULL=平台托管）"),
 	}
 }
 
@@ -85,5 +90,6 @@ func (Proxy) Indexes() []ent.Index {
 		index.Fields("deleted_at"),
 		index.Fields("expires_at"),
 		index.Fields("backup_proxy_id"),
+		index.Fields("owner_id"),
 	}
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	"github.com/Wei-Shaw/sub2api/internal/handler/supplier"
 	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 )
 
@@ -43,6 +44,13 @@ type AdminHandlers struct {
 	AuditLog               *admin.AuditLogHandler
 }
 
+// SupplierHandlers contains all supplier-related HTTP handlers
+type SupplierHandlers struct {
+	Account *supplier.AccountHandler
+	OAuth   *supplier.OAuthHandler
+	Proxy   *supplier.ProxyHandler
+}
+
 // Handlers contains all HTTP handlers
 type Handlers struct {
 	Auth             *AuthHandler
@@ -55,6 +63,7 @@ type Handlers struct {
 	ChannelMonitor   *ChannelMonitorUserHandler
 	ChannelMonitorV2 *ChannelMonitorV2Handler
 	Admin            *AdminHandlers
+	Supplier         *SupplierHandlers
 	Gateway          *GatewayHandler
 	OpenAIGateway    *OpenAIGatewayHandler
 	Setting          *SettingHandler

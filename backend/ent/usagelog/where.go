@@ -285,6 +285,11 @@ func CreatedAt(v time.Time) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// AccountOwnerID applies equality check predicate on the "account_owner_id" field. It's identical to AccountOwnerIDEQ.
+func AccountOwnerID(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldAccountOwnerID, v))
+}
+
 // UserIDEQ applies the EQ predicate on the "user_id" field.
 func UserIDEQ(v int64) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldUserID, v))
@@ -2498,6 +2503,56 @@ func CreatedAtLT(v time.Time) predicate.UsageLog {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// AccountOwnerIDEQ applies the EQ predicate on the "account_owner_id" field.
+func AccountOwnerIDEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldAccountOwnerID, v))
+}
+
+// AccountOwnerIDNEQ applies the NEQ predicate on the "account_owner_id" field.
+func AccountOwnerIDNEQ(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldAccountOwnerID, v))
+}
+
+// AccountOwnerIDIn applies the In predicate on the "account_owner_id" field.
+func AccountOwnerIDIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldAccountOwnerID, vs...))
+}
+
+// AccountOwnerIDNotIn applies the NotIn predicate on the "account_owner_id" field.
+func AccountOwnerIDNotIn(vs ...int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldAccountOwnerID, vs...))
+}
+
+// AccountOwnerIDGT applies the GT predicate on the "account_owner_id" field.
+func AccountOwnerIDGT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldAccountOwnerID, v))
+}
+
+// AccountOwnerIDGTE applies the GTE predicate on the "account_owner_id" field.
+func AccountOwnerIDGTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldAccountOwnerID, v))
+}
+
+// AccountOwnerIDLT applies the LT predicate on the "account_owner_id" field.
+func AccountOwnerIDLT(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldAccountOwnerID, v))
+}
+
+// AccountOwnerIDLTE applies the LTE predicate on the "account_owner_id" field.
+func AccountOwnerIDLTE(v int64) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldAccountOwnerID, v))
+}
+
+// AccountOwnerIDIsNil applies the IsNil predicate on the "account_owner_id" field.
+func AccountOwnerIDIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldAccountOwnerID))
+}
+
+// AccountOwnerIDNotNil applies the NotNil predicate on the "account_owner_id" field.
+func AccountOwnerIDNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldAccountOwnerID))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

@@ -29,6 +29,22 @@ func (s *adminServiceImpl) ListAccounts(ctx context.Context, page, pageSize int,
 	return accounts, result.Total, nil
 }
 
+// ListAccountsByOwner 按供应商归属过滤账号（分页）。
+// ownerID <= 0 时返回空结果（防御性：未鉴权调用不应查到任何账号）。
+func (s *adminServiceImpl) ListAccountsByOwner(ctx context.Context, ownerID int64, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string, sortBy, sortOrder string) ([]Account, int64, error) {
+	params := pagination.PaginationParams{Page: page, PageSize: pageSize, SortBy: sortBy, SortOrder: sortOrder}
+	accounts, result, err := s.accountRepo.ListByOwnerWithFilters(ctx, params, ownerID, platform, accountType, status, search, groupID, privacyMode)
+	if err != nil {
+		return nil, 0, err
+	}
+	return accounts, result.Total, nil
+}
+
+// ListAllAccountsByOwner 按供应商归属过滤账号（不分页），用于批量统计。
+func (s *adminServiceImpl) ListAllAccountsByOwner(ctx context.Context, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error) {
+	return s.accountRepo.ListAllByOwnerWithFilters(ctx, ownerID, platform, accountType, status, search, groupID, privacyMode)
+}
+
 func (s *adminServiceImpl) ListAccountsForSchedulerScoreFilter(ctx context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error) {
 	if s == nil || s.accountRepo == nil {
 		return nil, nil
@@ -455,6 +471,8 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 		}
 		account.LoadFactor = input.LoadFactor
 	}
+	// 供应商归属（nil = 平台托管账号，兼容存量）
+	account.OwnerID = input.OwnerID
 	return account, nil
 }
 
@@ -546,6 +564,7 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	if err != nil {
 		return nil, err
 	}
+	prevOwnerID := account.OwnerID
 	var normalizedExtra map[string]any
 	if input.Extra != nil {
 		normalizedExtra, err = normalizeOpenAILongContextBillingUpdateExtra(account, input)
@@ -772,6 +791,14 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	if input.AutoPauseOnExpired != nil {
 		account.AutoPauseOnExpired = *input.AutoPauseOnExpired
 	}
+	// 供应商归属：nil = 不修改；非 nil = 设置（0 表示清除归属，变为平台托管）
+	if input.OwnerID != nil {
+		if *input.OwnerID <= 0 {
+			account.OwnerID = nil
+		} else {
+			account.OwnerID = input.OwnerID
+		}
+	}
 
 	// 先验证分组是否存在（在任何写操作之前）
 	if input.GroupIDs != nil {
@@ -846,7 +873,27 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	if err != nil {
 		return nil, err
 	}
+
+	// 供应商归属变更时同步更新 usage_logs.account_owner_id 冗余字段。
+	if input.OwnerID != nil && !ownerIDEqual(prevOwnerID, updated.OwnerID) {
+		if s.usageLogRepo != nil {
+			if err := s.usageLogRepo.UpdateAccountOwnerID(ctx, id, updated.OwnerID); err != nil {
+				return nil, fmt.Errorf("sync usage_logs account_owner_id: %w", err)
+			}
+		}
+	}
+
 	return updated, nil
+}
+
+func ownerIDEqual(a, b *int64) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
 }
 
 // UpdateAccountExtra 仅对 Extra JSONB 做 key 级合并，避免覆盖其它运行态键

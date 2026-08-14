@@ -97,6 +97,22 @@ func (r *contentModerationTestProxyRepo) CountExpiringSoon(ctx context.Context, 
 	panic("not implemented")
 }
 
+func (r *contentModerationTestProxyRepo) ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]Proxy, *pagination.PaginationResult, error) {
+	panic("not implemented")
+}
+
+func (r *contentModerationTestProxyRepo) ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]ProxyWithAccountCount, *pagination.PaginationResult, error) {
+	panic("not implemented")
+}
+
+func (r *contentModerationTestProxyRepo) GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*Proxy, error) {
+	panic("not implemented")
+}
+
+func (r *contentModerationTestProxyRepo) ListActiveByOwner(ctx context.Context, ownerID int64) ([]Proxy, error) {
+	panic("not implemented")
+}
+
 func moderationProxyIDPtr(v int64) *int64 { return &v }
 
 // 审计请求必须真正经过配置的代理发出（#2646 核心行为）。

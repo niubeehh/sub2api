@@ -128,6 +128,10 @@ func (r *usageBatchLogRepoStub) GetDailyStatsAggregated(context.Context, int64, 
 	return nil, nil
 }
 
+func (r *usageBatchLogRepoStub) UpdateAccountOwnerID(context.Context, int64, *int64) error {
+	return nil
+}
+
 func TestAccountUsageService_GetUsageBatch_BestEffortByAccount(t *testing.T) {
 	t.Parallel()
 

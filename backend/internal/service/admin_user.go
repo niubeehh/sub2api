@@ -111,8 +111,8 @@ func normalizeUserRole(role, fallback string) (string, error) {
 	if role == "" {
 		return fallback, nil
 	}
-	if role != RoleAdmin && role != RoleUser {
-		return "", fmt.Errorf("invalid role: %q (must be %s or %s)", role, RoleAdmin, RoleUser)
+	if role != RoleAdmin && role != RoleUser && role != RoleSupplier {
+		return "", fmt.Errorf("invalid role: %q (must be %s, %s or %s)", role, RoleAdmin, RoleUser, RoleSupplier)
 	}
 	return role, nil
 }
@@ -125,7 +125,7 @@ func (s *adminServiceImpl) CreateUser(ctx context.Context, input *CreateUserInpu
 		balance = s.settingService.GetDefaultBalance(ctx)
 	}
 
-	// 角色可由管理员在创建时指定(admin/user);未提供时默认 user。
+	// 角色可由管理员在创建时指定(admin/user/supplier);未提供时默认 user。
 	role, err := normalizeUserRole(input.Role, RoleUser)
 	if err != nil {
 		return nil, err

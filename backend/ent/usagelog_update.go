@@ -947,6 +947,33 @@ func (_u *UsageLogUpdate) SetNillableCacheTTLOverridden(v *bool) *UsageLogUpdate
 	return _u
 }
 
+// SetAccountOwnerID sets the "account_owner_id" field.
+func (_u *UsageLogUpdate) SetAccountOwnerID(v int64) *UsageLogUpdate {
+	_u.mutation.ResetAccountOwnerID()
+	_u.mutation.SetAccountOwnerID(v)
+	return _u
+}
+
+// SetNillableAccountOwnerID sets the "account_owner_id" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableAccountOwnerID(v *int64) *UsageLogUpdate {
+	if v != nil {
+		_u.SetAccountOwnerID(*v)
+	}
+	return _u
+}
+
+// AddAccountOwnerID adds value to the "account_owner_id" field.
+func (_u *UsageLogUpdate) AddAccountOwnerID(v int64) *UsageLogUpdate {
+	_u.mutation.AddAccountOwnerID(v)
+	return _u
+}
+
+// ClearAccountOwnerID clears the value of the "account_owner_id" field.
+func (_u *UsageLogUpdate) ClearAccountOwnerID() *UsageLogUpdate {
+	_u.mutation.ClearAccountOwnerID()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UsageLogUpdate) SetUser(v *User) *UsageLogUpdate {
 	return _u.SetUserID(v.ID)
@@ -1380,6 +1407,15 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.CacheTTLOverridden(); ok {
 		_spec.SetField(usagelog.FieldCacheTTLOverridden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AccountOwnerID(); ok {
+		_spec.SetField(usagelog.FieldAccountOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAccountOwnerID(); ok {
+		_spec.AddField(usagelog.FieldAccountOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.AccountOwnerIDCleared() {
+		_spec.ClearField(usagelog.FieldAccountOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2461,6 +2497,33 @@ func (_u *UsageLogUpdateOne) SetNillableCacheTTLOverridden(v *bool) *UsageLogUpd
 	return _u
 }
 
+// SetAccountOwnerID sets the "account_owner_id" field.
+func (_u *UsageLogUpdateOne) SetAccountOwnerID(v int64) *UsageLogUpdateOne {
+	_u.mutation.ResetAccountOwnerID()
+	_u.mutation.SetAccountOwnerID(v)
+	return _u
+}
+
+// SetNillableAccountOwnerID sets the "account_owner_id" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableAccountOwnerID(v *int64) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetAccountOwnerID(*v)
+	}
+	return _u
+}
+
+// AddAccountOwnerID adds value to the "account_owner_id" field.
+func (_u *UsageLogUpdateOne) AddAccountOwnerID(v int64) *UsageLogUpdateOne {
+	_u.mutation.AddAccountOwnerID(v)
+	return _u
+}
+
+// ClearAccountOwnerID clears the value of the "account_owner_id" field.
+func (_u *UsageLogUpdateOne) ClearAccountOwnerID() *UsageLogUpdateOne {
+	_u.mutation.ClearAccountOwnerID()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *UsageLogUpdateOne) SetUser(v *User) *UsageLogUpdateOne {
 	return _u.SetUserID(v.ID)
@@ -2924,6 +2987,15 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if value, ok := _u.mutation.CacheTTLOverridden(); ok {
 		_spec.SetField(usagelog.FieldCacheTTLOverridden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AccountOwnerID(); ok {
+		_spec.SetField(usagelog.FieldAccountOwnerID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedAccountOwnerID(); ok {
+		_spec.AddField(usagelog.FieldAccountOwnerID, field.TypeInt64, value)
+	}
+	if _u.mutation.AccountOwnerIDCleared() {
+		_spec.ClearField(usagelog.FieldAccountOwnerID, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

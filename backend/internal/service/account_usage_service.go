@@ -78,6 +78,10 @@ type UsageLogRepository interface {
 	GetAccountStatsAggregated(ctx context.Context, accountID int64, startTime, endTime time.Time) (*usagestats.UsageStats, error)
 	GetModelStatsAggregated(ctx context.Context, modelName string, startTime, endTime time.Time) (*usagestats.UsageStats, error)
 	GetDailyStatsAggregated(ctx context.Context, userID int64, startTime, endTime time.Time) ([]map[string]any, error)
+
+	// UpdateAccountOwnerID 同步更新指定账号的使用日志的 account_owner_id 冗余字段。
+	// ownerID 为 nil 时置 NULL（平台托管）。账号归属变更时调用。
+	UpdateAccountOwnerID(ctx context.Context, accountID int64, ownerID *int64) error
 }
 
 type accountWindowStatsBatchReader interface {

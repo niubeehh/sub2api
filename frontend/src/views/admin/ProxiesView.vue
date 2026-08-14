@@ -47,6 +47,7 @@
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
             </button>
             <button
+              v-if="!authStore.isSupplier"
               @click="handleBatchTest"
               :disabled="batchTesting || loading"
               class="btn btn-secondary"
@@ -56,6 +57,7 @@
               {{ t('admin.proxies.testConnection') }}
             </button>
             <button
+              v-if="!authStore.isSupplier"
               @click="handleBatchQualityCheck"
               :disabled="batchQualityChecking || loading"
               class="btn btn-secondary"
@@ -65,6 +67,7 @@
               {{ t('admin.proxies.batchQualityCheck') }}
             </button>
             <button
+              v-if="!authStore.isSupplier"
               @click="openBatchDelete"
               :disabled="selectedCount === 0"
               class="btn btn-danger"
@@ -73,10 +76,10 @@
               <Icon name="trash" size="md" class="mr-2" />
               {{ t('admin.proxies.batchDeleteAction') }}
             </button>
-            <button @click="showImportData = true" class="btn btn-secondary">
+            <button v-if="!authStore.isSupplier" @click="showImportData = true" class="btn btn-secondary">
               {{ t('admin.proxies.dataImport') }}
             </button>
-            <button @click="showExportDataDialog = true" class="btn btn-secondary">
+            <button v-if="!authStore.isSupplier" @click="showExportDataDialog = true" class="btn btn-secondary">
               {{ selectedCount > 0 ? t('admin.proxies.dataExportSelected') : t('admin.proxies.dataExport') }}
             </button>
             <button @click="showCreateModal = true" class="btn btn-primary">
@@ -815,6 +818,7 @@
 
     <!-- Batch Delete Confirmation Dialog -->
     <ConfirmDialog
+      v-if="!authStore.isSupplier"
       :show="showBatchDeleteDialog"
       :title="t('admin.proxies.batchDelete')"
       :message="t('admin.proxies.batchDeleteConfirm', { count: selectedCount })"
@@ -825,6 +829,7 @@
       @cancel="showBatchDeleteDialog = false"
     />
     <ConfirmDialog
+      v-if="!authStore.isSupplier"
       :show="showExportDataDialog"
       :title="t('admin.proxies.dataExport')"
       :message="t('admin.proxies.dataExportConfirmMessage')"
@@ -835,6 +840,7 @@
     />
 
     <ImportDataModal
+      v-if="!authStore.isSupplier"
       :show="showImportData"
       @close="showImportData = false"
       @imported="handleDataImported"
@@ -967,6 +973,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { adminAPI } from '@/api/admin'
 import type { Proxy, ProxyAccountSummary, ProxyProtocol, ProxyQualityCheckResult } from '@/types'
 import type { Column } from '@/components/common/types'
@@ -991,10 +998,11 @@ import { proxyExpiryBadgeClass, proxyExpiryLabelKey } from '@/utils/proxyExpiry'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const { copyToClipboard } = useClipboard()
 
 const columns = computed<Column[]>(() => [
-  { key: 'select', label: '', sortable: false },
+  ...(authStore.isSupplier ? [] : [{ key: 'select', label: '', sortable: false }]),
   { key: 'name', label: t('admin.proxies.columns.name'), sortable: true },
   { key: 'protocol', label: t('admin.proxies.columns.protocol'), sortable: true },
   { key: 'address', label: t('admin.proxies.columns.address'), sortable: false },
@@ -1150,7 +1158,10 @@ const editForm = reactive({
 
 const allProxiesForBackup = ref<Proxy[]>([])
 const loadBackupProxyOptions = async () => {
-  allProxiesForBackup.value = await adminAPI.proxies.getAllWithCount()
+  // 供应商后端不支持 with_count 参数，使用 getAll
+  allProxiesForBackup.value = authStore.isSupplier
+    ? await adminAPI.proxies.getAll()
+    : await adminAPI.proxies.getAllWithCount()
 }
 const backupProxyOptions = (excludeId?: number) =>
   allProxiesForBackup.value

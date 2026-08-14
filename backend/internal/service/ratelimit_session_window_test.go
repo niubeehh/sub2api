@@ -90,6 +90,12 @@ func (m *sessionWindowMockRepo) ListWithFilters(context.Context, pagination.Pagi
 func (m *sessionWindowMockRepo) ListAllWithFilters(context.Context, string, string, string, string, int64, string) ([]Account, error) {
 	panic("unexpected")
 }
+func (m *sessionWindowMockRepo) ListByOwnerWithFilters(context.Context, pagination.PaginationParams, int64, string, string, string, string, int64, string) ([]Account, *pagination.PaginationResult, error) {
+	panic("unexpected")
+}
+func (m *sessionWindowMockRepo) ListAllByOwnerWithFilters(context.Context, int64, string, string, string, string, int64, string) ([]Account, error) {
+	panic("unexpected")
+}
 func (m *sessionWindowMockRepo) ListByGroup(context.Context, int64) ([]Account, error) {
 	panic("unexpected")
 }

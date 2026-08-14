@@ -19,7 +19,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, upstream_response_model, upstream_model_mismatch, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, image_input_tokens, image_input_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, image_input_size, image_output_size, image_size_source, image_size_breakdown, video_count, video_resolution, video_duration_seconds, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, long_context_billing_applied, channel_id, model_mapping_chain, billing_tier, billing_mode, account_stats_cost, session_id, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, upstream_response_model, upstream_model_mismatch, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, image_input_tokens, image_input_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, ip_address, image_count, image_size, image_input_size, image_output_size, image_size_source, image_size_breakdown, video_count, video_resolution, video_duration_seconds, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, cache_ttl_overridden, long_context_billing_applied, channel_id, model_mapping_chain, billing_tier, billing_mode, account_stats_cost, session_id, created_at, account_owner_id"
 
 func (r *usageLogRepository) GetByID(ctx context.Context, id int64) (log *service.UsageLog, err error) {
 	query := "SELECT " + usageLogSelectColumns + " FROM usage_logs WHERE id = $1"
@@ -116,6 +116,11 @@ func (r *usageLogRepository) ListWithFilters(ctx context.Context, params paginat
 		conditions = append(conditions, fmt.Sprintf("group_id = $%d", len(args)+1))
 		args = append(args, filters.GroupID)
 	}
+	conditions, args = appendAccountIDsCondition(conditions, args, filters.AccountIDs)
+	if filters.AccountOwnerID > 0 {
+		conditions = append(conditions, fmt.Sprintf("account_owner_id = $%d", len(args)+1))
+		args = append(args, filters.AccountOwnerID)
+	}
 	if requestID := strings.TrimSpace(filters.RequestID); requestID != "" {
 		conditions = append(conditions, fmt.Sprintf("request_id = $%d", len(args)+1))
 		args = append(args, requestID)
@@ -165,6 +170,18 @@ func upstreamModelMismatchCondition(column string, mismatch bool) string {
 		return column + " IS TRUE"
 	}
 	return column + " IS FALSE"
+}
+
+// appendAccountIDsCondition 把 AccountIDs 过滤条件追加到 conditions/args。
+// 返回更新后的 conditions/args。空切片时不追加任何条件。
+// 使用 ANY($n) 数组匹配，避免 IN (...) 的参数展开问题。
+func appendAccountIDsCondition(conditions []string, args []any, accountIDs []int64) ([]string, []any) {
+	if len(accountIDs) == 0 {
+		return conditions, args
+	}
+	conditions = append(conditions, fmt.Sprintf("account_id = ANY($%d)", len(args)+1))
+	args = append(args, accountIDs)
+	return conditions, args
 }
 
 func shouldUseFastUsageLogTotal(filters UsageLogFilters) bool {
@@ -499,6 +516,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		accountStatsCost          sql.NullFloat64
 		sessionID                 sql.NullString
 		createdAt                 time.Time
+		accountOwnerID            sql.NullInt64
 	)
 
 	if err := scanner.Scan(
@@ -562,6 +580,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&accountStatsCost,
 		&sessionID,
 		&createdAt,
+		&accountOwnerID,
 	); err != nil {
 		return nil, err
 	}
@@ -598,6 +617,10 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		CacheTTLOverridden:        cacheTTLOverridden,
 		LongContextBillingApplied: longContextBillingApplied,
 		CreatedAt:                 createdAt,
+	}
+	if accountOwnerID.Valid {
+		v := accountOwnerID.Int64
+		log.AccountOwnerID = &v
 	}
 	// 先回填 legacy 字段，再基于 legacy + request_type 计算最终请求类型，保证历史数据兼容。
 	log.Stream = stream
@@ -769,4 +792,18 @@ func setToSlice(set map[int64]struct{}) []int64 {
 		out = append(out, id)
 	}
 	return out
+}
+
+// UpdateAccountOwnerID 同步更新指定账号的使用日志的 account_owner_id 冗余字段。
+// ownerID 为 nil 时置 NULL（平台托管）。账号归属变更时调用。
+func (r *usageLogRepository) UpdateAccountOwnerID(ctx context.Context, accountID int64, ownerID *int64) error {
+	query := "UPDATE usage_logs SET account_owner_id = $1 WHERE account_id = $2"
+	var arg any
+	if ownerID != nil {
+		arg = *ownerID
+	} else {
+		arg = nil
+	}
+	_, err := r.sql.ExecContext(ctx, query, arg, accountID)
+	return err
 }

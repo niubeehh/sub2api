@@ -71,6 +71,11 @@ type AccountRepository interface {
 	// ListAllWithFilters 返回符合过滤条件的全部账号（不分页），用于账号列表页
 	// 计算 OpenAI 调度分数的过滤范围池。
 	ListAllWithFilters(ctx context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error)
+	// ListByOwnerWithFilters 按供应商归属过滤账号（分页），用于供应商视角的账号列表。
+	// ownerID <= 0 时返回空结果（防御性：不允许未鉴权调用查全量）。
+	ListByOwnerWithFilters(ctx context.Context, params pagination.PaginationParams, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, *pagination.PaginationResult, error)
+	// ListAllByOwnerWithFilters 按供应商归属过滤账号（不分页），用于供应商视角的批量统计。
+	ListAllByOwnerWithFilters(ctx context.Context, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error)
 	ListByGroup(ctx context.Context, groupID int64) ([]Account, error)
 	ListActive(ctx context.Context) ([]Account, error)
 	ListByPlatform(ctx context.Context, platform string) ([]Account, error)

@@ -27,6 +27,15 @@ type ProxyRepository interface {
 	ListActive(ctx context.Context) ([]Proxy, error)
 	ListActiveWithAccountCount(ctx context.Context) ([]ProxyWithAccountCount, error)
 
+	// ListByOwner 按供应商归属过滤代理（owner_id = ownerID），分页 + 过滤。
+	ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]Proxy, *pagination.PaginationResult, error)
+	// ListByOwnerWithAccountCount 同 ListByOwner，但附带账号数量。
+	ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]ProxyWithAccountCount, *pagination.PaginationResult, error)
+	// GetByIDAndOwner 按 ID + owner 过滤获取代理，防止跨供应商访问。
+	GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*Proxy, error)
+	// ListActiveByOwner 返回供应商名下的活跃代理（不分页）。
+	ListActiveByOwner(ctx context.Context, ownerID int64) ([]Proxy, error)
+
 	ExistsByHostPortAuth(ctx context.Context, host string, port int, username, password string) (bool, error)
 	CountAccountsByProxyID(ctx context.Context, proxyID int64) (int64, error)
 	ListAccountSummariesByProxyID(ctx context.Context, proxyID int64) ([]ProxyAccountSummary, error)

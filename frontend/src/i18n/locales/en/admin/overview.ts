@@ -480,6 +480,7 @@ export default {
       allStatuses: 'All Status',
       admin: 'Admin',
       user: 'User',
+      supplier: 'Supplier',
       disabled: 'Disabled',
       email: 'Email',
       password: 'Password',
@@ -670,7 +671,8 @@ export default {
       totalRecharged: 'Total Recharged',
       roles: {
         admin: 'Admin',
-        user: 'User'
+        user: 'User',
+        supplier: 'Supplier'
       },
       // Settings Dropdowns
       filterSettings: 'Filter Settings',

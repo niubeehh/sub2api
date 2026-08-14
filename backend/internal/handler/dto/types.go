@@ -297,6 +297,9 @@ type Account struct {
 	ParentAccountID *int64 `json:"parent_account_id,omitempty"`
 	QuotaDimension  string `json:"quota_dimension,omitempty"`
 
+	// OwnerID 供应商归属用户 ID（nil = 平台托管账号）
+	OwnerID *int64 `json:"owner_id,omitempty"`
+
 	// 影子账号回填的母账号信息（仅影子非空，源自母账号 Credentials/Extra）
 	ParentEmail                 string `json:"parent_email,omitempty"`
 	ParentPlanType              string `json:"parent_plan_type,omitempty"`

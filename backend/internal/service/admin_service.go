@@ -70,6 +70,10 @@ type AdminService interface {
 
 	// Account management
 	ListAccounts(ctx context.Context, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string, sortBy, sortOrder string) ([]Account, int64, error)
+	// ListAccountsByOwner 按供应商归属过滤账号（分页），用于供应商视角的账号列表。
+	ListAccountsByOwner(ctx context.Context, ownerID int64, page, pageSize int, platform, accountType, status, search string, groupID int64, privacyMode string, sortBy, sortOrder string) ([]Account, int64, error)
+	// ListAllAccountsByOwner 按供应商归属过滤账号（不分页），用于供应商视角的批量统计。
+	ListAllAccountsByOwner(ctx context.Context, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error)
 	// ListAccountsForSchedulerScoreFilter 返回符合过滤条件的全部账号（不分页），
 	// 作为账号列表页计算 OpenAI 调度分数的过滤范围池。
 	ListAccountsForSchedulerScoreFilter(ctx context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, error)
@@ -143,7 +147,7 @@ type CreateUserInput struct {
 	Password      string
 	Username      string
 	Notes         string
-	Role          string // 空字符串表示使用默认角色(user);合法值 admin/user
+	Role          string // 空字符串表示使用默认角色(user);合法值 admin/user/supplier
 	Balance       *float64
 	Concurrency   int
 	RPMLimit      int
@@ -374,6 +378,8 @@ type CreateAccountInput struct {
 	// SkipMixedChannelCheck skips the mixed channel risk check when binding groups.
 	// This should only be set when the caller has explicitly confirmed the risk.
 	SkipMixedChannelCheck bool
+	// OwnerID 供应商归属用户 ID（nil = 平台托管账号）。
+	OwnerID *int64
 }
 
 // ShadowOptions is the input for CreateShadow.
@@ -403,6 +409,9 @@ type UpdateAccountInput struct {
 	ProbeEnabled          *bool
 	RateSyncEnabled       *bool
 	SkipMixedChannelCheck bool // 跳过混合渠道检查（用户已确认风险）
+	// OwnerID 供应商归属用户 ID。
+	// nil = 不修改；非 nil（含 0）= 设置为该值（0 表示清除归属，变为平台托管）。
+	OwnerID *int64
 }
 
 // BulkUpdateAccountsInput describes the payload for bulk updating accounts.
@@ -662,6 +671,7 @@ type adminServiceImpl struct {
 	affiliateService     adminRechargeAffiliateAccruer
 	compositeRouteRepo   CompositeModelRouteRepository
 	compositeResolver    *CompositeRouteResolver
+	usageLogRepo         UsageLogRepository
 }
 
 type adminRechargeAffiliateAccruer interface {
@@ -695,6 +705,7 @@ func NewAdminService(
 	affiliateService *AffiliateService,
 	compositeRouteRepo CompositeModelRouteRepository,
 	compositeResolver *CompositeRouteResolver,
+	usageLogRepo UsageLogRepository,
 ) AdminService {
 	return &adminServiceImpl{
 		userRepo:             userRepo,
@@ -721,5 +732,6 @@ func NewAdminService(
 		affiliateService:     affiliateService,
 		compositeRouteRepo:   compositeRouteRepo,
 		compositeResolver:    compositeResolver,
+		usageLogRepo:         usageLogRepo,
 	}
 }

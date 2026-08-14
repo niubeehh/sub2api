@@ -480,6 +480,7 @@ export default {
       allStatuses: '全部状态',
       admin: '管理员',
       user: '用户',
+      supplier: '供应商',
       disabled: '禁用',
       email: '邮箱',
       password: '密码',
@@ -559,7 +560,8 @@ export default {
       deleteConfirm: "确定要删除用户 '{email}' 吗？此操作无法撤销。",
       roles: {
         admin: '管理员',
-        user: '用户'
+        user: '用户',
+        supplier: '供应商'
       },
       form: {
         emailLabel: '邮箱',

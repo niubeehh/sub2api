@@ -205,6 +205,10 @@ type UsageLog struct {
 	Account      *Account
 	Group        *Group
 	Subscription *UserSubscription
+
+	// AccountOwnerID 冗余字段：写入时从 account.OwnerID 取值。
+	// NULL = 平台托管账号。用于供应商视角按 owner 直接过滤。
+	AccountOwnerID *int64
 }
 
 func (u *UsageLog) TotalTokens() int {

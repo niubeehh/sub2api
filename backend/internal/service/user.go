@@ -68,6 +68,12 @@ func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
 }
 
+// IsSupplier 返回当前用户是否为供应商角色。
+// 供应商可提供上游账号并观测自己名下账号的消耗，但不参与管理面操作。
+func (u *User) IsSupplier() bool {
+	return u.Role == RoleSupplier
+}
+
 func (u *User) IsActive() bool {
 	return u.Status == StatusActive
 }
