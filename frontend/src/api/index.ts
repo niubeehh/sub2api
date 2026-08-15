@@ -26,5 +26,8 @@ export { channelMonitorUserAPI } from './channelMonitor'
 // Admin APIs
 export { adminAPI } from './admin'
 
+// Supplier APIs
+export { supplierAPI } from './supplier'
+
 // Default export
 export { default } from './client'

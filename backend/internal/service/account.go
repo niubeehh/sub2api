@@ -60,6 +60,11 @@ type Account struct {
 	ParentAccountID *int64 // non-nil → 影子账号（不持凭据，透传母账号凭据）
 	QuotaDimension  string // 用量维度："" / "global" / "spark"
 
+	// OwnerID 供应商归属用户 ID。
+	// nil = 平台托管账号（兼容存量）；非 nil = 该账号归属于对应供应商用户，
+	// 供应商角色登录后只能看到/操作 owner_id = 自己的账号。
+	OwnerID *int64
+
 	Proxy         *Proxy
 	AccountGroups []AccountGroup
 	GroupIDs      []int64

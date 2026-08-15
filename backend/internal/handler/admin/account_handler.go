@@ -128,6 +128,7 @@ type CreateAccountRequest struct {
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
 	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	OwnerID                 *int64         `json:"owner_id"`                   // 供应商归属用户 ID（nil = 平台托管）
 }
 
 // UpdateAccountRequest represents update account request
@@ -150,6 +151,7 @@ type UpdateAccountRequest struct {
 	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
 	RateSyncEnabled         *bool          `json:"upstream_billing_rate_sync_enabled"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	OwnerID                 *int64         `json:"owner_id"`                   // 供应商归属用户 ID（nil = 平台托管）
 }
 
 // BulkUpdateAccountsRequest represents the payload for bulk editing accounts
@@ -863,6 +865,7 @@ func (h *AccountHandler) Create(c *gin.Context) {
 			AutoPauseOnExpired:    req.AutoPauseOnExpired,
 			ProbeEnabled:          req.ProbeEnabled,
 			SkipMixedChannelCheck: skipCheck,
+			OwnerID:               req.OwnerID,
 		})
 		if execErr != nil {
 			return nil, execErr
@@ -992,6 +995,7 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		ProbeEnabled:          req.ProbeEnabled,
 		RateSyncEnabled:       req.RateSyncEnabled,
 		SkipMixedChannelCheck: skipCheck,
+		OwnerID:               req.OwnerID,
 	})
 	if err != nil {
 		// 检查是否为混合渠道错误

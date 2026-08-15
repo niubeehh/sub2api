@@ -59,6 +59,29 @@ apiClient.interceptors.request.use(
       config.params.timezone = getUserTimezone()
     }
 
+    // Supplier role URL rewriting: when the current user is a supplier,
+    // rewrite admin accounts/proxies endpoints to supplier endpoints so that
+    // admin UI components (AccountsView, ProxiesView, etc.) can be reused
+    // without modification. The backend enforces owner_id scoping on all
+    // supplier routes.
+    if (config.url) {
+      try {
+        const userStr = localStorage.getItem('auth_user')
+        if (userStr) {
+          const user = JSON.parse(userStr)
+          if (user?.role === 'supplier') {
+            // Rewrite /admin/accounts → /supplier/accounts
+            // Rewrite /admin/proxies → /supplier/proxies
+            config.url = config.url
+              .replace(/^\/admin\/accounts/, '/supplier/accounts')
+              .replace(/^\/admin\/proxies/, '/supplier/proxies')
+          }
+        }
+      } catch {
+        // ignore JSON parse errors
+      }
+    }
+
     if (config.headers) {
       const requestURL = String(config.url || '')
       if (shouldMarkAdminUIRequest(requestURL)) {

@@ -3,11 +3,25 @@ package handler
 import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
+	"github.com/Wei-Shaw/sub2api/internal/handler/supplier"
 	"github.com/Wei-Shaw/sub2api/internal/securityaudit"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/google/wire"
 )
+
+// ProvideSupplierHandlers creates the SupplierHandlers struct
+func ProvideSupplierHandlers(
+	accountHandler *supplier.AccountHandler,
+	oauthHandler *supplier.OAuthHandler,
+	proxyHandler *supplier.ProxyHandler,
+) *SupplierHandlers {
+	return &SupplierHandlers{
+		Account: accountHandler,
+		OAuth:   oauthHandler,
+		Proxy:   proxyHandler,
+	}
+}
 
 // ProvideAdminHandlers creates the AdminHandlers struct
 func ProvideAdminHandlers(
@@ -177,6 +191,7 @@ func ProvideHandlers(
 	channelMonitorUserHandler *ChannelMonitorUserHandler,
 	channelMonitorV2Handler *ChannelMonitorV2Handler,
 	adminHandlers *AdminHandlers,
+	supplierHandlers *SupplierHandlers,
 	gatewayHandler *GatewayHandler,
 	openaiGatewayHandler *OpenAIGatewayHandler,
 	settingHandler *SettingHandler,
@@ -202,6 +217,7 @@ func ProvideHandlers(
 		ChannelMonitor:   channelMonitorUserHandler,
 		ChannelMonitorV2: channelMonitorV2Handler,
 		Admin:            adminHandlers,
+		Supplier:         supplierHandlers,
 		Gateway:          gatewayHandler,
 		OpenAIGateway:    openaiGatewayHandler,
 		Setting:          settingHandler,
@@ -277,5 +293,12 @@ var ProviderSet = wire.NewSet(
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,
+
+	// Supplier handlers
+	supplier.NewAccountHandler,
+	supplier.NewOAuthHandler,
+	supplier.NewProxyHandler,
+	ProvideSupplierHandlers,
+
 	ProvideHandlers,
 )

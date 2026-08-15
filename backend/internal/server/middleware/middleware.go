@@ -29,6 +29,10 @@ const (
 	// apiKey 已加载但尚未写入 ContextKeyAPIKey；该键让 Ops 错误日志仍能取到
 	// user/group/platform。仅供 Ops 错误日志读取，不代表请求已通过鉴权。
 	ContextKeyOpsFallbackAPIKey ContextKey = "ops_fallback_api_key"
+	// ContextKeyOwnerFilter 供应商视角的强制归属过滤约束。
+	// 由 SupplierOnly 中间件写入：supplier 角色时设为 user.ID，admin 不设置。
+	// handler 读取此键对账号/用量查询强制按 owner_id 过滤，防止越权。
+	ContextKeyOwnerFilter ContextKey = "owner_filter"
 )
 
 // ForcePlatform 返回设置强制平台的中间件

@@ -153,17 +153,72 @@ func (h *AccountHandler) ImportCodexSession(c *gin.Context) {
 	}
 
 	executeAdminIdempotentJSON(c, "admin.accounts.import_codex_session", req, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
-		return h.importCodexSessions(ctx, req, entries)
+		return h.importCodexSessions(ctx, req, entries, nil)
 	})
 }
 
-func (h *AccountHandler) importCodexSessions(ctx context.Context, req CodexSessionImportRequest, entries []codexImportEntry) (CodexSessionImportResult, error) {
+// ImportCodexSessionForOwner 供应商视角的 Codex session 导入。
+// ownerID 非 nil 时：创建账号强制注入 owner_id，已有账号只在自己名下匹配。
+// 供 supplier handler 调用，不直接注册路由。
+func (h *AccountHandler) ImportCodexSessionForOwner(c *gin.Context, ownerID *int64) {
+	var req CodexSessionImportRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if err := service.ValidateOpenAILongContextBillingExtra(service.PlatformOpenAI, req.Extra); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if req.Concurrency != nil && *req.Concurrency < 0 {
+		response.BadRequest(c, "concurrency must be >= 0")
+		return
+	}
+	if req.Priority != nil && *req.Priority < 0 {
+		response.BadRequest(c, "priority must be >= 0")
+		return
+	}
+	if req.RateMultiplier != nil && *req.RateMultiplier < 0 {
+		response.BadRequest(c, "rate_multiplier must be >= 0")
+		return
+	}
+	if req.LoadFactor != nil && *req.LoadFactor > 10000 {
+		response.BadRequest(c, "load_factor must be <= 10000")
+		return
+	}
+
+	entries, err := parseCodexSessionImportEntries(req)
+	if err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	if len(entries) == 0 {
+		response.BadRequest(c, "请输入 accessToken 或 Codex session JSON")
+		return
+	}
+
+	result, err := h.importCodexSessions(c.Request.Context(), req, entries, ownerID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
+func (h *AccountHandler) importCodexSessions(ctx context.Context, req CodexSessionImportRequest, entries []codexImportEntry, ownerID *int64) (CodexSessionImportResult, error) {
 	result := CodexSessionImportResult{
 		Total: len(entries),
 		Items: make([]CodexSessionImportItem, 0, len(entries)),
 	}
 
-	existingAccounts, err := h.listAccountsFiltered(ctx, service.PlatformOpenAI, service.AccountTypeOAuth, "", "", 0, "", "created_at", "desc")
+	// 供应商视角：只在自己名下的已有账号中匹配去重
+	var existingAccounts []service.Account
+	var err error
+	if ownerID != nil && *ownerID > 0 {
+		existingAccounts, err = h.adminService.ListAllAccountsByOwner(ctx, *ownerID, service.PlatformOpenAI, service.AccountTypeOAuth, "", "", 0, "")
+	} else {
+		existingAccounts, err = h.listAccountsFiltered(ctx, service.PlatformOpenAI, service.AccountTypeOAuth, "", "", 0, "", "created_at", "desc")
+	}
 	if err != nil {
 		return result, err
 	}
@@ -345,6 +400,7 @@ func (h *AccountHandler) importCodexSessions(ctx context.Context, req CodexSessi
 			AutoPauseOnExpired:    autoPauseOnExpired,
 			SkipDefaultGroupBind:  skipDefaultGroupBind,
 			SkipMixedChannelCheck: skipMixedChannelCheck,
+			OwnerID:               ownerID,
 		})
 		if createErr != nil {
 			result.Failed++

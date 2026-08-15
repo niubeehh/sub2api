@@ -702,6 +702,64 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // ==================== Supplier Routes ====================
+  {
+    path: '/supplier/dashboard',
+    name: 'SupplierDashboard',
+    component: () => import('@/views/supplier/DashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresSupplier: true,
+      title: 'Supplier Dashboard',
+      titleKey: 'supplier.dashboard.title'
+    }
+  },
+  {
+    path: '/supplier/accounts',
+    name: 'SupplierAccounts',
+    component: () => import('@/views/admin/AccountsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresSupplier: true,
+      title: 'My Accounts',
+      titleKey: 'supplier.accounts.title'
+    }
+  },
+  {
+    path: '/supplier/accounts/:id',
+    name: 'SupplierAccountDetail',
+    component: () => import('@/views/supplier/AccountDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresSupplier: true,
+      title: 'Account Detail',
+      titleKey: 'supplier.accountDetail.title'
+    }
+  },
+  {
+    path: '/supplier/usage',
+    name: 'SupplierUsage',
+    component: () => import('@/views/supplier/UsageView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresSupplier: true,
+      title: 'Usage Logs',
+      titleKey: 'supplier.usage.title'
+    }
+  },
+
+  {
+    path: '/supplier/proxies',
+    name: 'SupplierProxies',
+    component: () => import('@/views/admin/ProxiesView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresSupplier: true,
+      title: 'Proxies',
+      titleKey: 'supplier.proxies.title'
+    }
+  },
+
   // ==================== 404 Not Found ====================
   {
     path: '/:pathMatch(.*)*',
@@ -766,6 +824,13 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
   return false
 }
 
+// 根据用户角色返回默认首页路径
+function defaultHomePath(isAdmin: boolean, isSupplier: boolean): string {
+  if (isAdmin) return '/admin/dashboard'
+  if (isSupplier) return '/supplier/dashboard'
+  return '/dashboard'
+}
+
 router.beforeEach(async (to, _from, next) => {
   // 开始导航加载状态
   navigationLoading.startNavigation()
@@ -790,6 +855,7 @@ router.beforeEach(async (to, _from, next) => {
   // Check if route requires authentication
   const requiresAuth = to.meta.requiresAuth !== false // Default to true
   const requiresAdmin = to.meta.requiresAdmin === true
+  const requiresSupplier = to.meta.requiresSupplier === true
 
   if (to.path === '/setup') {
     try {
@@ -813,8 +879,8 @@ router.beforeEach(async (to, _from, next) => {
         next()
         return
       }
-      // Admin users go to admin dashboard, regular users go to user dashboard
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      // Admin users go to admin dashboard, supplier users go to supplier dashboard, regular users go to user dashboard
+      next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
       return
     }
     // Model Plaza:公开路由但受「启用开关 + 可选强制登录」双重控制(后端同口径 fail-closed)
@@ -831,9 +897,7 @@ router.beforeEach(async (to, _from, next) => {
       if (appStore.publicSettingsLoaded && plazaSettings?.model_plaza_enabled === false) {
         next(
           authStore.isAuthenticated
-            ? authStore.isAdmin
-              ? '/admin/dashboard'
-              : '/dashboard'
+            ? defaultHomePath(authStore.isAdmin, authStore.isSupplier)
             : '/home'
         )
         return
@@ -870,10 +934,23 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
+  // Supplier 用户访问用户侧 dashboard 时，重定向到供应商 dashboard
+  // （OAuth 回调等场景默认跳 /dashboard，这里统一拦截）
+  if (authStore.isSupplier && !authStore.isAdmin && to.path === '/dashboard') {
+    next('/supplier/dashboard')
+    return
+  }
+
   // Check admin requirement
   if (requiresAdmin && !authStore.isAdmin) {
-    // User is authenticated but not admin, redirect to user dashboard
-    next('/dashboard')
+    // User is authenticated but not admin, redirect to appropriate dashboard
+    next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+    return
+  }
+
+  // Check supplier requirement (admin 也可访问 supplier 路由)
+  if (requiresSupplier && !authStore.isAdmin && !authStore.isSupplier) {
+    next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
     return
   }
 
@@ -910,7 +987,7 @@ router.beforeEach(async (to, _from, next) => {
     appStore.publicSettingsLoaded &&
     appStore.cachedPublicSettings?.payment_enabled === false
   ) {
-    next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+    next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
     return
   }
 
@@ -919,7 +996,7 @@ router.beforeEach(async (to, _from, next) => {
     appStore.publicSettingsLoaded &&
     appStore.cachedPublicSettings?.risk_control_enabled === false
   ) {
-    next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
+    next(authStore.isAdmin ? '/admin/settings' : defaultHomePath(authStore.isAdmin, authStore.isSupplier))
     return
   }
 
@@ -935,14 +1012,14 @@ router.beforeEach(async (to, _from, next) => {
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
       // 简易模式下访问受限页面,重定向到仪表板
-      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
       return
     }
   }
 
-  // Backend mode: admin gets full access, non-admin blocked
+  // Backend mode: admin and supplier get full access, other users blocked
   if (appStore.backendModeEnabled) {
-    if (authStore.isAuthenticated && authStore.isAdmin) {
+    if (authStore.isAuthenticated && (authStore.isAdmin || authStore.isSupplier)) {
       next()
       return
     }

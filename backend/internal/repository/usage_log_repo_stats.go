@@ -676,6 +676,11 @@ func (r *usageLogRepository) GetStatsWithFilters(ctx context.Context, filters Us
 		conditions = append(conditions, fmt.Sprintf("group_id = $%d", len(args)+1))
 		args = append(args, filters.GroupID)
 	}
+	conditions, args = appendAccountIDsCondition(conditions, args, filters.AccountIDs)
+	if filters.AccountOwnerID > 0 {
+		conditions = append(conditions, fmt.Sprintf("account_owner_id = $%d", len(args)+1))
+		args = append(args, filters.AccountOwnerID)
+	}
 	conditions, args = appendUsageLogModelWhereCondition(conditions, args, filters.Model, filters.ModelFilterSource)
 	conditions, args = appendRequestTypeOrStreamWhereCondition(conditions, args, filters.RequestType, filters.Stream)
 	if filters.BillingType != nil {

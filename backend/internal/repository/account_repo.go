@@ -157,6 +157,9 @@ func createAccountRecord(ctx context.Context, client *dbent.Client, account *ser
 	if account.ParentAccountID != nil {
 		builder.SetParentAccountID(*account.ParentAccountID)
 	}
+	if account.OwnerID != nil {
+		builder.SetOwnerID(*account.OwnerID)
+	}
 
 	created, err := builder.Save(ctx)
 	if err != nil {
@@ -567,6 +570,7 @@ func (r *accountRepository) updateLockedAccount(
 
 	builder.SetQuotaDimension(dbaccount.QuotaDimension(account.QuotaDimensionOrDefault()))
 	builder.SetNillableParentAccountID(account.ParentAccountID)
+	builder.SetNillableOwnerID(account.OwnerID)
 
 	return builder.Save(ctx)
 }
@@ -1004,6 +1008,51 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 
 func (r *accountRepository) ListAllWithFilters(ctx context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, error) {
 	accounts, err := r.accountListFilteredQuery(platform, accountType, status, search, groupID, privacyMode).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.accountsToService(ctx, accounts)
+}
+
+// accountOwnerFilteredQuery 在 accountListFilteredQuery 基础上叠加 owner_id 过滤。
+// ownerID <= 0 时返回空查询（防御性：未鉴权调用不应查到任何账号）。
+func (r *accountRepository) accountOwnerFilteredQuery(ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) *dbent.AccountQuery {
+	q := r.accountListFilteredQuery(platform, accountType, status, search, groupID, privacyMode)
+	if ownerID <= 0 {
+		// 永假条件，确保不返回任何行
+		return q.Where(dbaccount.IDEQ(0))
+	}
+	return q.Where(dbaccount.OwnerIDEQ(ownerID))
+}
+
+func (r *accountRepository) ListByOwnerWithFilters(ctx context.Context, params pagination.PaginationParams, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, *pagination.PaginationResult, error) {
+	q := r.accountOwnerFilteredQuery(ownerID, platform, accountType, status, search, groupID, privacyMode)
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	accountsQuery := q.
+		Offset(params.Offset()).
+		Limit(params.Limit())
+	for _, order := range accountListOrder(params) {
+		accountsQuery = accountsQuery.Order(order)
+	}
+
+	accounts, err := accountsQuery.All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	outAccounts, err := r.accountsToService(ctx, accounts)
+	if err != nil {
+		return nil, nil, err
+	}
+	return outAccounts, paginationResultFromTotal(int64(total), params), nil
+}
+
+func (r *accountRepository) ListAllByOwnerWithFilters(ctx context.Context, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, error) {
+	accounts, err := r.accountOwnerFilteredQuery(ownerID, platform, accountType, status, search, groupID, privacyMode).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -3359,6 +3408,7 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		SessionWindowStatus:     derefString(m.SessionWindowStatus),
 		ParentAccountID:         m.ParentAccountID,
 		QuotaDimension:          string(m.QuotaDimension),
+		OwnerID:                 m.OwnerID,
 	}
 }
 

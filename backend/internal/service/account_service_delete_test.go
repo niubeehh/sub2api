@@ -87,6 +87,14 @@ func (s *accountRepoStub) ListWithFilters(ctx context.Context, params pagination
 	panic("unexpected ListWithFilters call")
 }
 
+func (s *accountRepoStub) ListByOwnerWithFilters(ctx context.Context, params pagination.PaginationParams, ownerID int64, platform, accountType, status, search string, groupID int64, privacyMode string) ([]Account, *pagination.PaginationResult, error) {
+	panic("unexpected ListByOwnerWithFilters call")
+}
+
+func (s *accountRepoStub) ListAllByOwnerWithFilters(context.Context, int64, string, string, string, string, int64, string) ([]Account, error) {
+	panic("unexpected ListAllByOwnerWithFilters call")
+}
+
 func (s *accountRepoStub) ListByGroup(ctx context.Context, groupID int64) ([]Account, error) {
 	panic("unexpected ListByGroup call")
 }

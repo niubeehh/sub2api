@@ -108,6 +108,8 @@ const (
 	FieldCacheTTLOverridden = "cache_ttl_overridden"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldAccountOwnerID holds the string denoting the account_owner_id field in the database.
+	FieldAccountOwnerID = "account_owner_id"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeAPIKey holds the string denoting the api_key edge name in mutations.
@@ -207,6 +209,7 @@ var Columns = []string{
 	FieldVideoDurationSeconds,
 	FieldCacheTTLOverridden,
 	FieldCreatedAt,
+	FieldAccountOwnerID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -528,6 +531,11 @@ func ByCacheTTLOverridden(opts ...sql.OrderTermOption) OrderOption {
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByAccountOwnerID orders the results by the account_owner_id field.
+func ByAccountOwnerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccountOwnerID, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

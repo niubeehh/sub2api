@@ -273,6 +273,12 @@ type UsageLogFilters struct {
 	GroupID   int64
 	RequestID string
 	Model     string
+	// AccountIDs 按多个账号 ID 过滤（供应商视角按归属账号集合聚合）。
+	// 与 AccountID 互斥：AccountIDs 非空时优先使用。
+	AccountIDs []int64
+	// AccountOwnerID 按上游账号归属供应商过滤（冗余字段，O(1) 索引查询）。
+	// 与 AccountIDs/AccountID 互斥：AccountOwnerID > 0 时优先使用。
+	AccountOwnerID int64
 	// ModelFilterSource controls how Model is matched. Empty preserves raw usage_logs.model semantics.
 	ModelFilterSource     string
 	RequestType           *int16

@@ -84,7 +84,7 @@ export interface User {
   linuxdo_bound?: boolean
   oidc_bound?: boolean
   wechat_bound?: boolean
-  role: 'admin' | 'user' // User role for authorization
+  role: 'admin' | 'supplier' | 'user' // User role for authorization
   balance: number // User balance for API usage
   frozen_balance?: number // Balance currently held by async batch jobs
   concurrency: number // Allowed concurrent requests
@@ -1151,6 +1151,8 @@ export interface Account {
   proxy?: Proxy
   group_ids?: number[] // Groups this account belongs to
   groups?: Group[] // Preloaded group objects
+  // 供应商归属用户 ID（null/undefined = 平台托管账号）
+  owner_id?: number | null
 
   // Rate limit & scheduling fields
   schedulable: boolean
@@ -1418,6 +1420,8 @@ export interface CreateAccountRequest {
   auto_pause_on_expired?: boolean
   upstream_billing_probe_enabled?: boolean
   confirm_mixed_channel_risk?: boolean
+  // 供应商归属用户 ID（null = 平台托管账号）
+  owner_id?: number | null
 }
 
 export interface UpdateAccountRequest {
@@ -1439,6 +1443,8 @@ export interface UpdateAccountRequest {
   upstream_billing_probe_enabled?: boolean
   upstream_billing_rate_sync_enabled?: boolean
   confirm_mixed_channel_risk?: boolean
+  // 供应商归属用户 ID（null = 不修改；0 = 清除归属变为平台托管；>0 = 设置归属）
+  owner_id?: number | null
 }
 
 export interface CheckMixedChannelRequest {
@@ -1947,7 +1953,7 @@ export interface UpdateUserRequest {
   password?: string
   username?: string
   notes?: string
-  role?: 'admin' | 'user'
+  role?: 'admin' | 'supplier' | 'user'
   balance?: number
   concurrency?: number
   rpm_limit?: number

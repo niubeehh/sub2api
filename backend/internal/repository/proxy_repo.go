@@ -54,6 +54,9 @@ func (r *proxyRepository) Create(ctx context.Context, proxyIn *service.Proxy) er
 	if proxyIn.BackupProxyID != nil {
 		builder.SetBackupProxyID(*proxyIn.BackupProxyID)
 	}
+	if proxyIn.OwnerID != nil {
+		builder.SetOwnerID(*proxyIn.OwnerID)
+	}
 
 	created, err := builder.Save(ctx)
 	if err == nil {
@@ -480,7 +483,7 @@ func (r *proxyRepository) CountAccountsByProxyID(ctx context.Context, proxyID in
 
 func (r *proxyRepository) ListAccountSummariesByProxyID(ctx context.Context, proxyID int64) ([]service.ProxyAccountSummary, error) {
 	rows, err := r.sql.QueryContext(ctx, `
-		SELECT id, name, platform, type, notes
+		SELECT id, name, platform, type, notes, owner_id
 		FROM accounts
 		WHERE proxy_id = $1 AND deleted_at IS NULL
 		ORDER BY id DESC
@@ -498,21 +501,27 @@ func (r *proxyRepository) ListAccountSummariesByProxyID(ctx context.Context, pro
 			platform string
 			accType  string
 			notes    sql.NullString
+			ownerID  sql.NullInt64
 		)
-		if err := rows.Scan(&id, &name, &platform, &accType, &notes); err != nil {
+		if err := rows.Scan(&id, &name, &platform, &accType, &notes, &ownerID); err != nil {
 			return nil, err
 		}
 		var notesPtr *string
 		if notes.Valid {
 			notesPtr = &notes.String
 		}
-		out = append(out, service.ProxyAccountSummary{
+		summary := service.ProxyAccountSummary{
 			ID:       id,
 			Name:     name,
 			Platform: platform,
 			Type:     accType,
 			Notes:    notesPtr,
-		})
+		}
+		if ownerID.Valid {
+			v := ownerID.Int64
+			summary.OwnerID = &v
+		}
+		out = append(out, summary)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -596,6 +605,7 @@ func proxyEntityToService(m *dbent.Proxy) *service.Proxy {
 		FallbackMode:   m.FallbackMode,
 		BackupProxyID:  m.BackupProxyID,
 		ExpiryWarnDays: m.ExpiryWarnDays,
+		OwnerID:        m.OwnerID,
 	}
 	if m.Username != nil {
 		out.Username = *m.Username
@@ -805,4 +815,102 @@ func (r *proxyRepository) CountExpiringSoon(ctx context.Context, now time.Time) 
 		  AND expires_at > $2 AND expires_at <= $2 + (expiry_warn_days || ' days')::interval`,
 		[]any{service.StatusActive, now}, &c)
 	return c, err
+}
+
+// ListByOwner 按供应商归属过滤代理（owner_id = ownerID），分页 + 过滤。
+func (r *proxyRepository) ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]service.Proxy, *pagination.PaginationResult, error) {
+	q := r.client.Proxy.Query().Where(proxy.OwnerIDEQ(ownerID))
+	if protocol != "" {
+		q = q.Where(proxy.ProtocolEQ(protocol))
+	}
+	if status != "" {
+		q = q.Where(proxy.StatusEQ(status))
+	}
+	if search != "" {
+		q = q.Where(proxy.NameContainsFold(search))
+	}
+
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	proxiesQuery := q.
+		Offset(params.Offset()).
+		Limit(params.Limit())
+	for _, order := range proxyListOrder(params) {
+		proxiesQuery = proxiesQuery.Order(order)
+	}
+
+	proxies, err := proxiesQuery.All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	outProxies := make([]service.Proxy, 0, len(proxies))
+	for i := range proxies {
+		outProxies = append(outProxies, *proxyEntityToService(proxies[i]))
+	}
+
+	return outProxies, paginationResultFromTotal(int64(total), params), nil
+}
+
+// ListByOwnerWithAccountCount 同 ListByOwner，但附带账号数量。
+func (r *proxyRepository) ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]service.ProxyWithAccountCount, *pagination.PaginationResult, error) {
+	q := r.client.Proxy.Query().Where(proxy.OwnerIDEQ(ownerID))
+	if protocol != "" {
+		q = q.Where(proxy.ProtocolEQ(protocol))
+	}
+	if status != "" {
+		q = q.Where(proxy.StatusEQ(status))
+	}
+	if search != "" {
+		q = q.Where(proxy.NameContainsFold(search))
+	}
+
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	proxiesQuery := q.
+		Offset(params.Offset()).
+		Limit(params.Limit())
+	for _, order := range proxyListOrder(params) {
+		proxiesQuery = proxiesQuery.Order(order)
+	}
+
+	proxies, err := proxiesQuery.All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return r.buildProxyWithAccountCountResult(ctx, proxies, params, int64(total))
+}
+
+// GetByIDAndOwner 按 ID + owner 过滤获取代理，防止跨供应商访问。
+func (r *proxyRepository) GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*service.Proxy, error) {
+	m, err := r.client.Proxy.Query().Where(proxy.IDEQ(id), proxy.OwnerIDEQ(ownerID)).Only(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, service.ErrProxyNotFound
+		}
+		return nil, err
+	}
+	return proxyEntityToService(m), nil
+}
+
+// ListActiveByOwner 返回供应商名下的活跃代理（不分页）。
+func (r *proxyRepository) ListActiveByOwner(ctx context.Context, ownerID int64) ([]service.Proxy, error) {
+	proxies, err := r.client.Proxy.Query().
+		Where(proxy.OwnerIDEQ(ownerID), proxy.StatusEQ(service.StatusActive)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]service.Proxy, 0, len(proxies))
+	for i := range proxies {
+		out = append(out, *proxyEntityToService(proxies[i]))
+	}
+	return out, nil
 }

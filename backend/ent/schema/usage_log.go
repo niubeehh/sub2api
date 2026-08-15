@@ -186,6 +186,13 @@ func (UsageLog) Fields() []ent.Field {
 			Default(time.Now).
 			Immutable().
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
+
+		// account_owner_id 冗余字段：记录写入时上游账号的归属供应商 ID。
+		// NULL = 平台托管账号或历史数据。用于供应商视角按 owner 直接过滤，避免万级 account_ids 数组。
+		field.Int64("account_owner_id").
+			Optional().
+			Nillable().
+			Comment("上游账号归属供应商 ID（冗余，NULL=平台托管/历史）"),
 	}
 }
 
@@ -235,5 +242,7 @@ func (UsageLog) Indexes() []ent.Index {
 		index.Fields("api_key_id", "created_at"),
 		// 分组维度时间范围查询（线上由 SQL 迁移创建 group_id IS NOT NULL 的部分索引）
 		index.Fields("group_id", "created_at"),
+		// 供应商视角：按 owner + 时间范围查询使用记录
+		index.Fields("account_owner_id", "created_at"),
 	}
 }

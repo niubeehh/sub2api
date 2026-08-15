@@ -83,7 +83,7 @@ func TestImportCodexSessionsKeepsAgentIdentityTeamsSeparate(t *testing.T) {
 
 	result, err := handler.importCodexSessions(context.Background(), CodexSessionImportRequest{
 		SkipDefaultGroupBind: boolPtr(true),
-	}, []codexImportEntry{{Index: 1, Value: first}, {Index: 2, Value: second}})
+	}, []codexImportEntry{{Index: 1, Value: first}, {Index: 2, Value: second}}, nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, result.Created)
 	require.Zero(t, result.Updated)
@@ -114,7 +114,7 @@ func TestImportCodexSessionsMergesAgentIdentityRuntimesForSameTeam(t *testing.T)
 
 	result, err := handler.importCodexSessions(context.Background(), CodexSessionImportRequest{
 		SkipDefaultGroupBind: boolPtr(true),
-	}, []codexImportEntry{{Index: 1, Value: second}})
+	}, []codexImportEntry{{Index: 1, Value: second}}, nil)
 	require.NoError(t, err)
 	require.Zero(t, result.Created)
 	require.Equal(t, 1, result.Updated)
@@ -163,7 +163,7 @@ func TestImportCodexSessionsCreatesAgentIdentityWithoutOAuthExpiry(t *testing.T)
 				"chatgpt_user_id":   "user-import",
 			},
 		},
-	}})
+	}}, nil)
 	require.NoError(t, err)
 	require.Equal(t, 1, result.Created)
 	require.Zero(t, result.Failed)

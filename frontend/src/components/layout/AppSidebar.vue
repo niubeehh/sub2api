@@ -126,6 +126,24 @@
         </div>
       </template>
 
+      <!-- Supplier View -->
+      <template v-else-if="isSupplier">
+        <div class="sidebar-section">
+          <router-link
+            v-for="item in supplierNavItems"
+            :key="item.path"
+            :to="item.path"
+            class="sidebar-link mb-1"
+            :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
+            :title="sidebarCollapsed ? item.label : undefined"
+            @click="handleMenuItemClick(item.path)"
+          >
+            <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
+            <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
+          </router-link>
+        </div>
+      </template>
+
       <!-- Regular User View -->
       <template v-else-if="!appStore.backendModeEnabled">
         <div class="sidebar-section">
@@ -247,10 +265,11 @@ const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
 const isAdmin = computed(() => authStore.isAdmin)
+const isSupplier = computed(() => authStore.isSupplier)
 const sidebarNavRef = ref<HTMLElement | null>(null)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
-const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : '/dashboard'))
+const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : isSupplier.value ? '/supplier/dashboard' : '/dashboard'))
 
 // Track which parent nav groups are expanded
 const expandedGroups = ref<Set<string>>(new Set())
@@ -729,6 +748,16 @@ function finalizeNav(items: NavItem[]): NavItem[] {
 
 // User navigation items (for regular users)
 const userNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(true)))
+
+// Supplier navigation items
+const supplierNavItems = computed((): NavItem[] => {
+  return [
+    { path: '/supplier/dashboard', label: t('supplier.dashboard.title') || '仪表盘', icon: DashboardIcon },
+    { path: '/supplier/accounts', label: t('supplier.accounts.title') || '我的账号', icon: KeyIcon },
+    { path: '/supplier/proxies', label: t('supplier.proxies.title') || '代理管理', icon: GlobeIcon },
+    { path: '/supplier/usage', label: t('supplier.usage.title') || '用量明细', icon: ChartIcon },
+  ]
+})
 
 // Personal navigation items (for admin's "My Account" section, without Dashboard).
 // Admins access 可用渠道 from this section just like regular users — there is no
