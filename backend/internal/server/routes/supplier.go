@@ -85,5 +85,8 @@ func RegisterSupplierRoutes(
 			proxies.POST("/:id/quality-check", h.Supplier.Proxy.CheckQuality)
 			proxies.GET("/:id/accounts", h.Supplier.Proxy.GetProxyAccounts)
 		}
+
+		// 分组管理（只读，用于创建/编辑账号时选择分组）
+		supplier.GET("/groups/all", h.Supplier.Group.GetAll)
 	}
 }

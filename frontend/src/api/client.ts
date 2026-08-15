@@ -72,9 +72,11 @@ apiClient.interceptors.request.use(
           if (user?.role === 'supplier') {
             // Rewrite /admin/accounts → /supplier/accounts
             // Rewrite /admin/proxies → /supplier/proxies
+            // Rewrite /admin/groups → /supplier/groups
             config.url = config.url
               .replace(/^\/admin\/accounts/, '/supplier/accounts')
               .replace(/^\/admin\/proxies/, '/supplier/proxies')
+              .replace(/^\/admin\/groups/, '/supplier/groups')
           }
         }
       } catch {

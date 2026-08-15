@@ -15,11 +15,13 @@ func ProvideSupplierHandlers(
 	accountHandler *supplier.AccountHandler,
 	oauthHandler *supplier.OAuthHandler,
 	proxyHandler *supplier.ProxyHandler,
+	groupHandler *supplier.GroupHandler,
 ) *SupplierHandlers {
 	return &SupplierHandlers{
 		Account: accountHandler,
 		OAuth:   oauthHandler,
 		Proxy:   proxyHandler,
+		Group:   groupHandler,
 	}
 }
 
@@ -298,6 +300,7 @@ var ProviderSet = wire.NewSet(
 	supplier.NewAccountHandler,
 	supplier.NewOAuthHandler,
 	supplier.NewProxyHandler,
+	supplier.NewGroupHandler,
 	ProvideSupplierHandlers,
 
 	ProvideHandlers,

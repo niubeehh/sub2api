@@ -49,6 +49,7 @@ type SupplierHandlers struct {
 	Account *supplier.AccountHandler
 	OAuth   *supplier.OAuthHandler
 	Proxy   *supplier.ProxyHandler
+	Group   *supplier.GroupHandler
 }
 
 // Handlers contains all HTTP handlers

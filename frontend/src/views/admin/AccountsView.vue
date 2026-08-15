@@ -2382,15 +2382,9 @@ onMounted(async () => {
     loadUpstreamBillingProbeGlobalState()
   }
   try {
-    if (authStore.isSupplier) {
-      // 供应商没有 groups 端点，只加载 proxies
-      const p = await adminAPI.proxies.getAll()
-      proxies.value = p
-    } else {
-      const [p, g] = await Promise.all([adminAPI.proxies.getAll(), adminAPI.groups.getAll()])
-      proxies.value = p
-      groups.value = g
-    }
+    const [p, g] = await Promise.all([adminAPI.proxies.getAll(), adminAPI.groups.getAll()])
+    proxies.value = p
+    groups.value = g
   } catch (error) {
     console.error('Failed to load proxies/groups:', error)
   }
