@@ -56,7 +56,7 @@
           data-tour="account-form-name"
         />
       </div>
-      <div>
+      <div v-if="showAdvanced">
         <label class="input-label">{{ t('admin.accounts.notes') }}</label>
         <textarea
           v-model="form.notes"
@@ -889,7 +889,7 @@
           <p class="input-hint">{{ t('admin.accounts.upstream.apiKeyHint') }}</p>
         </div>
         <!-- 上游倍率自动探测：antigravity upstream 也是 API-key 账号 -->
-        <div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div v-if="showAdvanced" class="flex items-center justify-between gap-4 border-t border-gray-200 pt-4 dark:border-dark-600">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.upstreamBilling.autoProbe') }}</label>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -996,7 +996,7 @@
 
       <!-- Antigravity model restriction (applies to OAuth + Upstream) -->
       <!-- Antigravity 只支持模型映射模式，不支持白名单模式 -->
-      <div v-if="form.platform === 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
+      <div v-if="form.platform === 'antigravity' && showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
         <!-- Mapping Mode Only (no toggle for Antigravity) -->
@@ -1159,6 +1159,7 @@
 
         <!-- 上游倍率自动探测：全部 API-key 平台可用（所在区块已限定 apikey 类型） -->
         <div
+          v-if="showAdvanced"
           class="flex items-center justify-between gap-4 border-t border-gray-200 pt-4 dark:border-dark-600"
         >
           <div>
@@ -1185,7 +1186,7 @@
         </div>
 
         <!-- Model Restriction Section (Antigravity 已在上层条件排除) -->
-        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div v-if="showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
           <div
@@ -1371,7 +1372,7 @@
         </div>
 
         <!-- Pool Mode Section -->
-        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div v-if="showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.poolMode') }}</label>
@@ -1435,7 +1436,7 @@
         </div>
 
         <!-- Custom Error Codes Section -->
-        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div v-if="showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.customErrorCodes') }}</label>
@@ -1534,7 +1535,7 @@
 
         <!-- Header Override Section (anthropic/openai apikey only) -->
         <div
-          v-if="isHeaderOverrideCapable(form.platform, 'apikey')"
+          v-if="isHeaderOverrideCapable(form.platform, 'apikey') && showAdvanced"
           class="border-t border-gray-200 pt-4 dark:border-dark-600"
         >
           <div class="mb-3 flex items-center justify-between">
@@ -1703,7 +1704,7 @@
         </div>
 
         <!-- Model Restriction Section for Bedrock -->
-        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div v-if="showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
           <!-- Mode Toggle -->
@@ -1772,7 +1773,7 @@
         </div>
 
         <!-- Pool Mode Section for Bedrock -->
-        <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div v-if="showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <div class="mb-3 flex items-center justify-between">
             <div>
               <label class="input-label mb-0">{{ t('admin.accounts.poolMode') }}</label>
@@ -1838,7 +1839,7 @@
 
       <!-- 配额控制 (Anthropic apikey/bedrock: 配额限制 + 亲和) -->
       <div
-        v-if="form.platform === 'anthropic' && (form.type === 'apikey' || form.type === 'bedrock')"
+        v-if="form.platform === 'anthropic' && (form.type === 'apikey' || form.type === 'bedrock') && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -1890,7 +1891,7 @@
 
       <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
       <div
-        v-else-if="form.type === 'apikey' || form.type === 'bedrock'"
+        v-else-if="(form.type === 'apikey' || form.type === 'bedrock') && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -1942,7 +1943,7 @@
 
       <!-- Grok OAuth Custom Upstream URL (仅改写转发端点，OAuth 授权/刷新不受影响) -->
       <div
-        v-if="form.platform === 'grok' && isOAuthFlow"
+        v-if="form.platform === 'grok' && isOAuthFlow && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="mb-3 flex items-center justify-between">
@@ -1983,7 +1984,7 @@
 
       <!-- Grok OAuth Header Override (OAuth 类型没有 apikey 容器，需要独立区域) -->
       <div
-        v-if="form.platform === 'grok' && isOAuthFlow"
+        v-if="form.platform === 'grok' && isOAuthFlow && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="mb-3 flex items-center justify-between">
@@ -2027,7 +2028,7 @@
 
       <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型映射区域) -->
       <div
-        v-if="(form.platform === 'openai' || form.platform === 'grok') && isOAuthFlow"
+        v-if="(form.platform === 'openai' || form.platform === 'grok') && isOAuthFlow && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
@@ -2162,7 +2163,7 @@
       </div>
 
       <!-- Temp Unschedulable Rules -->
-      <div class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4">
+      <div v-if="showAdvanced" class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4">
         <div class="mb-3 flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{ t('admin.accounts.tempUnschedulable.title') }}</label>
@@ -2311,7 +2312,7 @@
 
       <!-- Intercept Warmup Requests (Anthropic/Antigravity) -->
       <div
-        v-if="form.platform === 'anthropic' || form.platform === 'antigravity'"
+        v-if="(form.platform === 'anthropic' || form.platform === 'antigravity') && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2343,7 +2344,7 @@
 
       <!-- 配额控制 (Anthropic OAuth/SetupToken: 亲和 + 窗口费用 + 会话 + RPM 等) -->
       <div
-        v-if="form.platform === 'anthropic' && accountCategory === 'oauth-based'"
+        v-if="form.platform === 'anthropic' && accountCategory === 'oauth-based' && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="mb-3">
@@ -2735,14 +2736,14 @@
           <input v-model.number="form.concurrency" type="number" min="1" class="input"
             @input="form.concurrency = Math.max(1, form.concurrency || 1)" />
         </div>
-        <div>
+        <div v-if="showAdvanced">
           <label class="input-label">{{ t('admin.accounts.loadFactor') }}</label>
           <input v-model.number="form.load_factor" type="number" min="1"
             class="input" :placeholder="String(form.concurrency || 1)"
             @input="form.load_factor = (form.load_factor &amp;&amp; form.load_factor >= 1) ? form.load_factor : null" />
           <p class="input-hint">{{ t('admin.accounts.loadFactorHint') }}</p>
         </div>
-        <div>
+        <div v-if="showAdvanced">
           <label class="input-label">{{ t('admin.accounts.priority') }}</label>
           <input
             v-model.number="form.priority"
@@ -2753,7 +2754,7 @@
           />
           <p class="input-hint">{{ t('admin.accounts.priorityHint') }}</p>
         </div>
-        <div>
+        <div v-if="showAdvanced">
           <label class="input-label">{{ t('admin.accounts.billingRateMultiplier') }}</label>
           <input v-model.number="form.rate_multiplier" type="number" min="0" step="0.001" class="input" />
           <p class="input-hint">{{ t('admin.accounts.billingRateMultiplierHint') }}</p>
@@ -2767,7 +2768,7 @@
 
       <!-- OpenAI 自动透传开关（OAuth/API Key） -->
       <div
-        v-if="form.platform === 'openai'"
+        v-if="form.platform === 'openai' && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2797,7 +2798,7 @@
 
       <!-- OpenAI Codex namespace 工具摊平（兼容开关，仅 OAuth） -->
       <div
-        v-if="form.platform === 'openai' && form.type === 'oauth'"
+        v-if="form.platform === 'openai' && form.type === 'oauth' && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2828,7 +2829,7 @@
 
       <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
       <div
-        v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey')"
+        v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey') && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2849,7 +2850,7 @@
 
       <!-- Anthropic API Key 自动透传开关 -->
       <div
-        v-if="form.platform === 'anthropic' && accountCategory === 'apikey'"
+        v-if="form.platform === 'anthropic' && accountCategory === 'apikey' && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2878,7 +2879,7 @@
       </div>
 
       <div
-        v-if="form.platform === 'anthropic' && accountCategory === 'apikey'"
+        v-if="form.platform === 'anthropic' && accountCategory === 'apikey' && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -2897,7 +2898,7 @@
 
       <!-- Anthropic API Key: Web Search Emulation (hidden when global disabled) -->
       <div
-        v-if="form.platform === 'anthropic' && accountCategory === 'apikey' && webSearchGlobalEnabled"
+        v-if="form.platform === 'anthropic' && accountCategory === 'apikey' && webSearchGlobalEnabled && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between">
@@ -2917,7 +2918,7 @@
 
       <!-- OpenAI OAuth Codex 官方客户端限制开关 -->
       <div
-        v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey')"
+        v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey') && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -3005,7 +3006,7 @@
 
       <!-- OpenAI Compact 能力配置 -->
       <div
-        v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey')"
+        v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey') && showAdvanced"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
       >
         <div class="flex items-center justify-between">
@@ -3044,7 +3045,7 @@
 
       <!-- OpenAI APIKey Responses API support mode -->
       <div
-        v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        v-if="form.platform === 'openai' && accountCategory === 'apikey' && showAdvanced"
         class="space-y-4 border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
@@ -3092,7 +3093,7 @@
         </div>
       </div>
 
-      <div>
+      <div v-if="showAdvanced">
         <div class="flex items-center justify-between">
           <div>
             <label class="input-label mb-0">{{
@@ -3122,7 +3123,7 @@
 
       <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <!-- Mixed Scheduling (only for antigravity accounts) -->
-        <div v-if="form.platform === 'antigravity'" class="flex items-center gap-2">
+        <div v-if="form.platform === 'antigravity' && showAdvanced" class="flex items-center gap-2">
           <label class="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
@@ -3150,7 +3151,7 @@
             </div>
           </div>
         </div>
-        <div v-if="form.platform === 'antigravity'" class="mt-3 flex items-center gap-2">
+        <div v-if="form.platform === 'antigravity' && showAdvanced" class="mt-3 flex items-center gap-2">
           <label class="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
@@ -3178,15 +3179,35 @@
           </div>
         </div>
 
-        <!-- Group Selection - 仅标准模式且非供应商显示 -->
+        <!-- Group Selection - 标准模式显示，供应商也可见 -->
         <GroupSelector
-          v-if="!authStore.isSimpleMode && !authStore.isSupplier"
+          v-if="!authStore.isSimpleMode"
           v-model="form.group_ids"
           :groups="groups"
           :platform="form.platform"
           :mixed-scheduling="mixedScheduling"
           data-tour="account-form-groups"
         />
+      </div>
+
+      <!-- 供应商视角：高级设置折叠开关 -->
+      <div v-if="authStore.isSupplier" class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <button
+          type="button"
+          @click="showAdvancedSettings = !showAdvancedSettings"
+          class="flex w-full items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600"
+        >
+          <span>{{ t('admin.accounts.advancedSettings') }}</span>
+          <svg
+            :class="['h-5 w-5 transition-transform', showAdvancedSettings ? 'rotate-180' : '']"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
 
     </form>
@@ -3632,6 +3653,10 @@ interface OAuthFlowExposed {
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+
+// 供应商视角下：高级设置默认折叠，非供应商始终展开
+const showAdvancedSettings = ref(false)
+const showAdvanced = computed(() => !authStore.isSupplier || showAdvancedSettings.value)
 
 const oauthStepTitle = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.oauth.openai.title')
