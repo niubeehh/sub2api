@@ -82,8 +82,8 @@ var usageLogInsertArgTypes = [...]string{
 	"text",        // billing_mode
 	"numeric",     // account_stats_cost
 	"text",        // session_id
-	"timestamptz", // created_at
 	"bigint",      // account_owner_id
+	"timestamptz", // created_at
 }
 
 const (
@@ -1343,8 +1343,8 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 			billingMode,
 			log.AccountStatsCost, // account_stats_cost
 			sessionID,            // session_id
-			createdAt,
-			log.AccountOwnerID, // account_owner_id
+			log.AccountOwnerID,   // account_owner_id
+			createdAt,            // created_at
 		},
 	}
 }
