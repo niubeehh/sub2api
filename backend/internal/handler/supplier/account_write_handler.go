@@ -13,6 +13,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// defaultAPIKeyBaseURL 返回各平台 apikey 类型的默认 base_url。
+// 供应商创建/编辑 apikey 账号时强制使用此默认值，禁止自定义上游地址。
+func defaultAPIKeyBaseURL(platform string) string {
+	switch platform {
+	case "openai":
+		return "https://api.openai.com"
+	case "gemini":
+		return "https://generativelanguage.googleapis.com"
+	case "grok":
+		return "https://api.x.ai/v1"
+	default: // anthropic 及其他
+		return "https://api.anthropic.com"
+	}
+}
+
+// enforceSupplierAPIKeyBaseURL 供应商视角下强制覆写 apikey 账号的 base_url 为平台默认值。
+// 仅在 ownerID > 0（即供应商请求）时生效；admin 请求不受限制。
+func enforceSupplierAPIKeyBaseURL(ownerID int64, accountType, platform string, credentials map[string]any) {
+	if ownerID <= 0 || accountType != "apikey" || credentials == nil {
+		return
+	}
+	credentials["base_url"] = defaultAPIKeyBaseURL(platform)
+}
+
 // ==================== 阶段二：写操作 ====================
 
 // CreateAccountRequest 供应商创建账号请求（不含 owner_id，owner_id 由 context 强制注入）。
@@ -93,9 +117,13 @@ func (h *AccountHandler) Create(c *gin.Context) {
 
 	// 强制 owner_id：supplier 用自己的 user.ID，admin 创建的为平台托管（nil）
 	var ownerID *int64
-	if oid := currentOwnerID(c); oid > 0 {
-		ownerID = &oid
+	ownerIDVal := currentOwnerID(c)
+	if ownerIDVal > 0 {
+		ownerID = &ownerIDVal
 	}
+
+	// 供应商创建 apikey 账号时强制使用平台默认 base_url，禁止自定义上游地址
+	enforceSupplierAPIKeyBaseURL(ownerIDVal, req.Type, req.Platform, req.Credentials)
 
 	// 校验 proxy_id 归属：供应商只能绑定自己的代理或平台托管代理（owner_id IS NULL）
 	if req.ProxyID != nil && *req.ProxyID > 0 && ownerID != nil {
@@ -149,7 +177,8 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		Abort404(c, "Invalid account ID")
 		return
 	}
-	if _, ok := h.checkAccountOwnership(c, accountID); !ok {
+	existingAccount, ok := h.checkAccountOwnership(c, accountID)
+	if !ok {
 		return
 	}
 
@@ -162,6 +191,14 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		response.BadRequest(c, "rate_multiplier must be >= 0")
 		return
 	}
+
+	// 供应商编辑 apikey 账号时强制使用平台默认 base_url，禁止自定义上游地址。
+	// Type 未传时按现有账号类型判断；platform 取现有账号的 platform（编辑不允许改 platform）。
+	effectiveType := req.Type
+	if effectiveType == "" {
+		effectiveType = existingAccount.Type
+	}
+	enforceSupplierAPIKeyBaseURL(currentOwnerID(c), effectiveType, existingAccount.Platform, req.Credentials)
 
 	skipCheck := req.ConfirmMixedChannelRisk != nil && *req.ConfirmMixedChannelRisk
 

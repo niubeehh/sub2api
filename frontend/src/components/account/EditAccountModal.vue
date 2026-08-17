@@ -34,6 +34,8 @@
             v-model="editBaseUrl"
             type="text"
             class="input"
+            :readonly="authStore.isSupplier"
+            :class="authStore.isSupplier ? 'cursor-not-allowed bg-gray-50 text-gray-500 dark:bg-dark-700 dark:text-gray-400' : ''"
             :placeholder="
               account.platform === 'openai'
                 ? 'https://api.openai.com'
@@ -48,7 +50,7 @@
           />
           <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
           <GrokBaseUrlPresets
-            v-if="account.platform === 'grok'"
+            v-if="account.platform === 'grok' && !authStore.isSupplier"
             class="mt-2"
             @select="editBaseUrl = $event"
           />
@@ -3597,7 +3599,8 @@ const syncFormFromAccount = (newAccount: Account | null) => {
           : newAccount.platform === 'grok'
             ? 'https://api.x.ai/v1'
             : 'https://api.anthropic.com'
-    editBaseUrl.value = (credentials.base_url as string) || platformDefaultUrl
+    // 供应商视角：base_url 强制使用平台默认值（后端会强制覆写，显示旧自定义值会误导）
+    editBaseUrl.value = authStore.isSupplier ? platformDefaultUrl : ((credentials.base_url as string) || platformDefaultUrl)
 
     // Load model mappings and detect mode
     loadModelRestrictionFromMapping(credentials.model_mapping as Record<string, unknown> | undefined)

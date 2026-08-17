@@ -1120,6 +1120,8 @@
             v-model="apiKeyBaseUrl"
             type="text"
             class="input"
+            :readonly="authStore.isSupplier"
+            :class="authStore.isSupplier ? 'cursor-not-allowed bg-gray-50 text-gray-500 dark:bg-dark-700 dark:text-gray-400' : ''"
             :placeholder="
               form.platform === 'openai'
                 ? 'https://api.openai.com'
@@ -1132,7 +1134,7 @@
           />
           <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
           <GrokBaseUrlPresets
-            v-if="form.platform === 'grok'"
+            v-if="form.platform === 'grok' && !authStore.isSupplier"
             class="mt-2"
             @select="apiKeyBaseUrl = $event"
           />
