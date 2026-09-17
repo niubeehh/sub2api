@@ -1,0 +1,9 @@
+# 单包 workspace：仅为承载 pnpm 10+ 的 overrides（pnpm 10+ 不再读取
+# package.json 的 pnpm 字段），与 pnpm-lock.yaml 的 overrides 块保持一致。
+packages:
+  - .
+overrides:
+  js-cookie: 3.0.7
+  form-data@<4.0.6: '>=4.0.6'
+  postcss@<8.5.18: '>=8.5.18'
+  dompurify@<3.4.14: '>=3.4.14'
