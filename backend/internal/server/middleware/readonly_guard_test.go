@@ -32,6 +32,21 @@ func TestReadOnlyGuard(t *testing.T) {
 		return w.Code
 	}
 
+	runPath := func(role, method, target string) int {
+		router := gin.New()
+		router.Use(func(c *gin.Context) {
+			if role != "" {
+				c.Set(string(ContextKeyUserRole), role)
+			}
+			c.Next()
+		})
+		router.Use(ReadOnlyGuard())
+		router.Handle(method, target, func(c *gin.Context) { c.Status(http.StatusOK) })
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(method, target, nil))
+		return w.Code
+	}
+
 	t.Run("readonly blocks writes", func(t *testing.T) {
 		for _, method := range []string{"POST", "PUT", "DELETE", "PATCH"} {
 			require.Equal(t, http.StatusForbidden, run(service.RoleReadOnly, method), method)
@@ -48,5 +63,20 @@ func TestReadOnlyGuard(t *testing.T) {
 	})
 	t.Run("missing role rejected", func(t *testing.T) {
 		require.Equal(t, http.StatusUnauthorized, run("", "GET"))
+	})
+	t.Run("readonly allows whitelisted access-control/query POSTs", func(t *testing.T) {
+		for _, target := range []string{
+			"/api/v1/admin/compliance/accept",
+			"/api/v1/admin/dashboard/users-usage",
+			"/api/v1/admin/dashboard/api-keys-usage",
+		} {
+			require.Equal(t, http.StatusOK, runPath(service.RoleReadOnly, "POST", target), target)
+			// admin 不受影响
+			require.Equal(t, http.StatusOK, runPath(service.RoleAdmin, "POST", target), target)
+		}
+	})
+	t.Run("readonly still blocks non-whitelist POST", func(t *testing.T) {
+		require.Equal(t, http.StatusForbidden, runPath(service.RoleReadOnly, "POST", "/api/v1/admin/users"))
+		require.Equal(t, http.StatusForbidden, runPath(service.RoleReadOnly, "POST", "/api/v1/admin/compliance/accept/extra"))
 	})
 }
