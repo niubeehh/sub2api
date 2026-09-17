@@ -121,7 +121,8 @@ marked.setOptions({
   gfm: true,
 })
 
-const visible = computed(() => authStore.isAuthenticated && authStore.isAdmin && complianceStore.shouldShow)
+// readonly 角色同样受 AdminComplianceGuard 约束（423），必须允许其完成确认，否则永久死锁
+const visible = computed(() => authStore.isAuthenticated && (authStore.isAdmin || authStore.isReadOnly) && complianceStore.shouldShow)
 const expectedPhrase = computed(() => complianceStore.expectedPhrase)
 const canSubmit = computed(() => typedPhrase.value.trim() === expectedPhrase.value)
 const currentDocument = computed(() => getLocale() === 'zh' ? zhDocument : enDocument)

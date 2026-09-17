@@ -968,7 +968,7 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-  if (requiresAdmin && authStore.isAdmin) {
+  if (requiresAdmin && (authStore.isAdmin || authStore.isReadOnly)) {
     const adminComplianceStore = useAdminComplianceStore()
     if (!adminComplianceStore.initialized) {
       try {

@@ -93,7 +93,8 @@ watch(
   () => authStore.isAuthenticated,
   (isAuthenticated, oldValue) => {
     if (isAuthenticated) {
-      if (authStore.isAdmin) {
+      // 合规确认按用户存储，readonly 进入管理面同样需要确认（否则所有 /admin 请求 423）
+      if (authStore.isAdmin || authStore.isReadOnly) {
         adminComplianceStore.fetchStatus().catch((error) => {
           console.error('Failed to fetch admin compliance status:', error)
         })
