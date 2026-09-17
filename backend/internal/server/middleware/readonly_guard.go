@@ -8,14 +8,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// readOnlyGuardAllowedPaths 是只读角色也允许访问的 POST 端点白名单：
+// readOnlyGuardAllowedPaths 是只读角色也允许访问的 POST 端点白名单。
+// 准入标准：请求体仅携带 ID 列表/过滤条件、响应为查询结果、无任何数据变更。
 //   - 合规确认：AdminComplianceGuard 对未确认用户返回 423，而确认动作本身是 POST；
 //     不放行会让 readonly 永远无法进入管理面（死锁）
-//   - 批量用量查询：用户/API Key 列表页加载时的查询型 POST（只读聚合，无数据变更）
+//   - 批量用量/统计/属性查询：各列表页加载表格聚合列时的查询型 POST
 var readOnlyGuardAllowedPaths = map[string]bool{
-	"/api/v1/admin/compliance/accept":        true,
-	"/api/v1/admin/dashboard/users-usage":    true,
-	"/api/v1/admin/dashboard/api-keys-usage": true,
+	"/api/v1/admin/compliance/accept":          true,
+	"/api/v1/admin/dashboard/users-usage":      true,
+	"/api/v1/admin/dashboard/api-keys-usage":   true,
+	"/api/v1/admin/accounts/usage/batch":       true,
+	"/api/v1/admin/accounts/today-stats/batch": true,
+	"/api/v1/admin/user-attributes/batch":      true,
 }
 
 // ReadOnlyGuard 只读角色写操作拦截中间件。

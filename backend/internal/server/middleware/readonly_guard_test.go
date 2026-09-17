@@ -69,6 +69,9 @@ func TestReadOnlyGuard(t *testing.T) {
 			"/api/v1/admin/compliance/accept",
 			"/api/v1/admin/dashboard/users-usage",
 			"/api/v1/admin/dashboard/api-keys-usage",
+			"/api/v1/admin/accounts/usage/batch",
+			"/api/v1/admin/accounts/today-stats/batch",
+			"/api/v1/admin/user-attributes/batch",
 		} {
 			require.Equal(t, http.StatusOK, runPath(service.RoleReadOnly, "POST", target), target)
 			// admin 不受影响
