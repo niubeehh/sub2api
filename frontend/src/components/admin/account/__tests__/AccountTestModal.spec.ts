@@ -7,6 +7,7 @@ const { getAvailableModels, copyToClipboard } = vi.hoisted(() => ({
   copyToClipboard: vi.fn()
 }))
 
+vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ isSupplier: false }) }))
 vi.mock('@/api/admin', () => ({
   adminAPI: {
     accounts: {
