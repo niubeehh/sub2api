@@ -74,7 +74,7 @@ func setupAccountDataRouter() (*gin.Engine, *stubAdminService) {
 	return router, adminSvc
 }
 
-func TestExportDataIncludesSecrets(t *testing.T) {
+func TestExportDataIncludesAccountSecretsWithoutProxyPassword(t *testing.T) {
 	router, adminSvc := setupAccountDataRouter()
 
 	proxyID := int64(11)
@@ -126,8 +126,12 @@ func TestExportDataIncludesSecrets(t *testing.T) {
 	require.Empty(t, resp.Data.Type)
 	require.Equal(t, 0, resp.Data.Version)
 	require.Len(t, resp.Data.Proxies, 1)
-	require.Equal(t, "pass", resp.Data.Proxies[0].Password)
+	// 代理密码原文与含密码的 proxy_key 均不出现在导出文件中
+	require.Empty(t, resp.Data.Proxies[0].Password)
+	require.Equal(t, "http|127.0.0.1|8080|user", resp.Data.Proxies[0].ProxyKey)
+	require.NotContains(t, resp.Data.Proxies[0].ProxyKey, "pass")
 	require.Len(t, resp.Data.Accounts, 1)
+	// 账号自身凭据仍随导出携带（账号迁移依赖）
 	require.Equal(t, "secret", resp.Data.Accounts[0].Credentials["token"])
 }
 
@@ -316,4 +320,73 @@ func TestImportDataReusesProxyAndSkipsDefaultGroup(t *testing.T) {
 	require.Len(t, adminSvc.createdProxies, 0)
 	require.Len(t, adminSvc.createdAccounts, 1)
 	require.True(t, adminSvc.createdAccounts[0].SkipDefaultGroupBind)
+}
+
+// TestImportDataReusesProxyViaExportKey 验证新格式导出文件（proxy_key 为无密码导出键、
+// 不含 password 字段）导入时按导出键复用库中已有代理，不新建、密码保持库中原值。
+func TestImportDataReusesProxyViaExportKey(t *testing.T) {
+	router, adminSvc := setupAccountDataRouter()
+
+	adminSvc.proxies = []service.Proxy{
+		{
+			ID:       1,
+			Name:     "proxy",
+			Protocol: "socks5",
+			Host:     "1.2.3.4",
+			Port:     1080,
+			Username: "u",
+			Password: "stored-secret",
+			Status:   service.StatusActive,
+		},
+	}
+
+	// 新格式：无密码导出键 + 无 password 字段
+	dataPayload := map[string]any{
+		"data": map[string]any{
+			"type":    dataType,
+			"version": dataVersion,
+			"proxies": []map[string]any{
+				{
+					"proxy_key": "socks5|1.2.3.4|1080|u",
+					"name":      "proxy",
+					"protocol":  "socks5",
+					"host":      "1.2.3.4",
+					"port":      1080,
+					"username":  "u",
+					"status":    "active",
+				},
+			},
+			"accounts": []map[string]any{
+				{
+					"name":        "acc",
+					"platform":    service.PlatformOpenAI,
+					"type":        service.AccountTypeOAuth,
+					"credentials": map[string]any{"token": "x"},
+					"proxy_key":   "socks5|1.2.3.4|1080|u",
+					"concurrency": 3,
+					"priority":    50,
+				},
+			},
+		},
+		"skip_default_group_bind": true,
+	}
+
+	body, _ := json.Marshal(dataPayload)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/data", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var importResp struct {
+		Code int `json:"code"`
+		Data struct {
+			ProxyReused int `json:"proxy_reused"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &importResp))
+	require.Equal(t, 0, importResp.Code)
+	require.Equal(t, 1, importResp.Data.ProxyReused, "应按无密码导出键复用已有代理")
+	require.Len(t, adminSvc.createdProxies, 0)
+	require.Len(t, adminSvc.createdAccounts, 1)
 }

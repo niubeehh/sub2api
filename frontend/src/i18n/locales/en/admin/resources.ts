@@ -69,7 +69,7 @@ export default {
       dataImportSuccess: 'Import completed: created {proxy_created}, reused {proxy_reused}',
       dataImportCompletedWithErrors: 'Import completed with errors: failed {proxy_failed}',
       dataExport: 'Export',
-      dataExportConfirmMessage: 'The exported data contains sensitive proxy information. Store it securely.',
+      dataExportConfirmMessage: 'The exported data contains sensitive proxy information (proxy passwords are NOT included). Store it securely.',
       dataExportConfirm: 'Confirm Export',
       dataExported: 'Data exported successfully',
       dataExportFailed: 'Failed to export data',

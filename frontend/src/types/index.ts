@@ -1590,6 +1590,7 @@ export interface AdminDataProxy {
   host: string
   port: number
   username?: string | null
+  /** 导出文件不再携带代理密码；仅旧版导出文件导入时可能有值 */
   password?: string | null
   status: 'active' | 'inactive'
 }

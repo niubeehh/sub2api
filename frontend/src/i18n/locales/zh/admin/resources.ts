@@ -69,7 +69,7 @@ export default {
       dataImportSuccess: '导入完成：创建 {proxy_created}，复用 {proxy_reused}',
       dataImportCompletedWithErrors: '导入完成但有错误：失败 {proxy_failed}',
       dataExport: '导出',
-      dataExportConfirmMessage: '导出的数据包含代理的敏感信息，请妥善保存。',
+      dataExportConfirmMessage: '导出的数据包含代理的敏感信息（不含代理密码），请妥善保存。',
       dataExportConfirm: '确认导出',
       dataExported: '数据导出成功',
       dataExportFailed: '数据导出失败',

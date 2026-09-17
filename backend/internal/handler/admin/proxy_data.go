@@ -55,7 +55,8 @@ func (h *ProxyHandler) ExportData(c *gin.Context) {
 	dataProxies := make([]DataProxy, 0, len(proxies))
 	for i := range proxies {
 		p := proxies[i]
-		key := buildProxyKey(p.Protocol, p.Host, p.Port, p.Username, p.Password)
+		// 导出键不含密码；密码原文不出现在导出文件中
+		key := buildProxyExportKey(p.Protocol, p.Host, p.Port, p.Username)
 
 		var expiresAt *int64
 		if p.ExpiresAt != nil {
@@ -73,7 +74,6 @@ func (h *ProxyHandler) ExportData(c *gin.Context) {
 			Host:            p.Host,
 			Port:            p.Port,
 			Username:        p.Username,
-			Password:        p.Password,
 			Status:          p.Status,
 			ExpiresAt:       expiresAt,
 			FallbackMode:    p.FallbackMode,
@@ -117,39 +117,62 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 		return
 	}
 
+	// proxyByKey: 含密码全键索引（兼容旧版导出文件的精确匹配）
+	// proxyByExportKey: 无密码导出键索引（新导出文件按此匹配，密码保持库中原值）
 	proxyByKey := make(map[string]service.Proxy, len(existingProxies))
+	proxyByExportKey := make(map[string]service.Proxy, len(existingProxies))
 	// proxyNameToID 用于 backup_proxy_name 反查：DB 已有 + 本批次新建均会写入
 	proxyNameToID := make(map[string]int64, len(existingProxies))
 	for i := range existingProxies {
 		p := existingProxies[i]
-		key := buildProxyKey(p.Protocol, p.Host, p.Port, p.Username, p.Password)
-		proxyByKey[key] = p
+		proxyByKey[buildProxyKey(p.Protocol, p.Host, p.Port, p.Username, p.Password)] = p
+		exportKey := buildProxyExportKey(p.Protocol, p.Host, p.Port, p.Username)
+		if _, exists := proxyByExportKey[exportKey]; !exists {
+			proxyByExportKey[exportKey] = p
+		}
 		if p.Name != "" {
 			proxyNameToID[p.Name] = p.ID
 		}
 	}
 
+	// resolveImportProxyKey 返回匹配键与日志键：匹配键优先沿用文件内 proxy_key
+	// （旧版含密码全键），否则按明文字段重算；日志键始终为无密码导出键，
+	// 避免密码原文进入错误信息/导入结果响应。
+	resolveImportProxyKey := func(item DataProxy) (matchKey, logKey string) {
+		logKey = buildProxyExportKey(item.Protocol, item.Host, item.Port, item.Username)
+		if item.ProxyKey != "" {
+			return item.ProxyKey, logKey
+		}
+		return buildProxyKey(item.Protocol, item.Host, item.Port, item.Username, item.Password), logKey
+	}
+	matchImportProxy := func(matchKey, logKey string) (service.Proxy, bool) {
+		if p, ok := proxyByKey[matchKey]; ok {
+			return p, true
+		}
+		if p, ok := proxyByExportKey[logKey]; ok {
+			return p, true
+		}
+		return service.Proxy{}, false
+	}
+
 	latencyProbeIDs := make([]int64, 0, len(req.Data.Proxies))
 	for i := range req.Data.Proxies {
 		item := req.Data.Proxies[i]
-		key := item.ProxyKey
-		if key == "" {
-			key = buildProxyKey(item.Protocol, item.Host, item.Port, item.Username, item.Password)
-		}
+		key, logKey := resolveImportProxyKey(item)
 
 		if err := validateDataProxy(item); err != nil {
 			result.ProxyFailed++
 			result.Errors = append(result.Errors, DataImportError{
 				Kind:     "proxy",
 				Name:     item.Name,
-				ProxyKey: key,
+				ProxyKey: logKey,
 				Message:  err.Error(),
 			})
 			continue
 		}
 
 		normalizedStatus := normalizeProxyStatus(item.Status)
-		if existing, ok := proxyByKey[key]; ok {
+		if existing, ok := matchImportProxy(key, logKey); ok {
 			result.ProxyReused++
 			if normalizedStatus != "" && normalizedStatus != existing.Status {
 				// 已存在代理同步 status 时，同时保留/覆盖导入 item 的完整字段，
@@ -189,7 +212,7 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 					result.Errors = append(result.Errors, DataImportError{
 						Kind:     "proxy",
 						Name:     item.Name,
-						ProxyKey: key,
+						ProxyKey: logKey,
 						Message:  "update status failed: " + err.Error(),
 					})
 				}
@@ -217,7 +240,7 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 				result.Errors = append(result.Errors, DataImportError{
 					Kind:     "proxy",
 					Name:     item.Name,
-					ProxyKey: key,
+					ProxyKey: logKey,
 					Message:  fmt.Sprintf("backup_proxy_name %q not found, fallback_mode downgraded to none", item.BackupProxyName),
 				})
 			}
@@ -240,7 +263,7 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 			result.Errors = append(result.Errors, DataImportError{
 				Kind:     "proxy",
 				Name:     item.Name,
-				ProxyKey: key,
+				ProxyKey: logKey,
 				Message:  err.Error(),
 			})
 			continue
@@ -272,7 +295,7 @@ func (h *ProxyHandler) ImportData(c *gin.Context) {
 				result.Errors = append(result.Errors, DataImportError{
 					Kind:     "proxy",
 					Name:     item.Name,
-					ProxyKey: key,
+					ProxyKey: logKey,
 					Message:  "update status failed: " + err.Error(),
 				})
 			}

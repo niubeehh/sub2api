@@ -36,12 +36,15 @@ type DataPayload struct {
 }
 
 type DataProxy struct {
-	ProxyKey        string `json:"proxy_key"`
-	Name            string `json:"name"`
-	Protocol        string `json:"protocol"`
-	Host            string `json:"host"`
-	Port            int    `json:"port"`
-	Username        string `json:"username,omitempty"`
+	// ProxyKey 为无密码导出键（protocol|host|port|username）；旧版导出文件为含密码
+	// 全键，导入侧两级匹配兼容。密码原文不随导出文件下发。
+	ProxyKey string `json:"proxy_key"`
+	Name     string `json:"name"`
+	Protocol string `json:"protocol"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Username string `json:"username,omitempty"`
+	// Password 仅用于兼容旧版导出文件（含密码）的导入；新导出不再包含。
 	Password        string `json:"password,omitempty"`
 	Status          string `json:"status"`
 	ExpiresAt       *int64 `json:"expires_at,omitempty"`        // unix 秒，与 DataAccount.ExpiresAt 风格一致
@@ -95,6 +98,13 @@ type DataImportError struct {
 
 func buildProxyKey(protocol, host string, port int, username, password string) string {
 	return fmt.Sprintf("%s|%s|%d|%s|%s", strings.TrimSpace(protocol), strings.TrimSpace(host), port, strings.TrimSpace(username), strings.TrimSpace(password))
+}
+
+// buildProxyExportKey 构建不含密码的导出键。
+// 导出文件不再携带密码原文（password 字段与含密码的 proxy_key 均不导出），
+// 导入侧以此键匹配库中已有代理，密码保持库中原值不被覆盖。
+func buildProxyExportKey(protocol, host string, port int, username string) string {
+	return fmt.Sprintf("%s|%s|%d|%s", strings.TrimSpace(protocol), strings.TrimSpace(host), port, strings.TrimSpace(username))
 }
 
 func (h *AccountHandler) ExportData(c *gin.Context) {
@@ -157,7 +167,8 @@ func (h *AccountHandler) ExportData(c *gin.Context) {
 	dataProxies := make([]DataProxy, 0, len(proxies))
 	for i := range proxies {
 		p := proxies[i]
-		key := buildProxyKey(p.Protocol, p.Host, p.Port, p.Username, p.Password)
+		// 导出键不含密码；密码原文不出现在导出文件中
+		key := buildProxyExportKey(p.Protocol, p.Host, p.Port, p.Username)
 		proxyKeyByID[p.ID] = key
 
 		var expiresAt *int64
@@ -176,7 +187,6 @@ func (h *AccountHandler) ExportData(c *gin.Context) {
 			Host:            p.Host,
 			Port:            p.Port,
 			Username:        p.Username,
-			Password:        p.Password,
 			Status:          p.Status,
 			ExpiresAt:       expiresAt,
 			FallbackMode:    p.FallbackMode,
@@ -256,36 +266,59 @@ func (h *AccountHandler) importData(ctx context.Context, req DataImportRequest) 
 		return result, err
 	}
 
+	// proxyKeyToID: 含密码全键索引（兼容旧版导出文件的精确匹配）
+	// proxyExportKeyToID: 无密码导出键索引（新导出文件按此匹配，密码保持库中原值）
 	proxyKeyToID := make(map[string]int64, len(existingProxies))
+	proxyExportKeyToID := make(map[string]int64, len(existingProxies))
 	// proxyNameToID 用于 backup_proxy_name 反查：DB 已有 + 本批次新建均会写入
 	proxyNameToID := make(map[string]int64, len(existingProxies))
 	for i := range existingProxies {
 		p := existingProxies[i]
-		key := buildProxyKey(p.Protocol, p.Host, p.Port, p.Username, p.Password)
-		proxyKeyToID[key] = p.ID
+		proxyKeyToID[buildProxyKey(p.Protocol, p.Host, p.Port, p.Username, p.Password)] = p.ID
+		exportKey := buildProxyExportKey(p.Protocol, p.Host, p.Port, p.Username)
+		if _, exists := proxyExportKeyToID[exportKey]; !exists {
+			proxyExportKeyToID[exportKey] = p.ID
+		}
 		if p.Name != "" {
 			proxyNameToID[p.Name] = p.ID
 		}
 	}
 
+	// resolveImportProxyKey 返回导入项的匹配键与日志键：匹配键优先沿用文件内的
+	// proxy_key（旧版含密码全键），否则按明文字段重算；日志键始终为无密码导出键，
+	// 避免密码原文进入错误信息/导入结果响应。
+	resolveImportProxyKey := func(item DataProxy) (matchKey, logKey string) {
+		logKey = buildProxyExportKey(item.Protocol, item.Host, item.Port, item.Username)
+		if item.ProxyKey != "" {
+			return item.ProxyKey, logKey
+		}
+		return buildProxyKey(item.Protocol, item.Host, item.Port, item.Username, item.Password), logKey
+	}
+	matchImportProxy := func(matchKey, logKey string) (int64, bool) {
+		if id, ok := proxyKeyToID[matchKey]; ok {
+			return id, true
+		}
+		if id, ok := proxyExportKeyToID[logKey]; ok {
+			return id, true
+		}
+		return 0, false
+	}
+
 	for i := range dataPayload.Proxies {
 		item := dataPayload.Proxies[i]
-		key := item.ProxyKey
-		if key == "" {
-			key = buildProxyKey(item.Protocol, item.Host, item.Port, item.Username, item.Password)
-		}
+		key, logKey := resolveImportProxyKey(item)
 		if err := validateDataProxy(item); err != nil {
 			result.ProxyFailed++
 			result.Errors = append(result.Errors, DataImportError{
 				Kind:     "proxy",
 				Name:     item.Name,
-				ProxyKey: key,
+				ProxyKey: logKey,
 				Message:  err.Error(),
 			})
 			continue
 		}
 		normalizedStatus := normalizeProxyStatus(item.Status)
-		if existingID, ok := proxyKeyToID[key]; ok {
+		if existingID, ok := matchImportProxy(key, logKey); ok {
 			proxyKeyToID[key] = existingID
 			result.ProxyReused++
 			if normalizedStatus != "" {
@@ -345,7 +378,7 @@ func (h *AccountHandler) importData(ctx context.Context, req DataImportRequest) 
 				result.Errors = append(result.Errors, DataImportError{
 					Kind:     "proxy",
 					Name:     item.Name,
-					ProxyKey: key,
+					ProxyKey: logKey,
 					Message:  fmt.Sprintf("backup_proxy_name %q not found, fallback_mode downgraded to none", item.BackupProxyName),
 				})
 			}
@@ -368,7 +401,7 @@ func (h *AccountHandler) importData(ctx context.Context, req DataImportRequest) 
 			result.Errors = append(result.Errors, DataImportError{
 				Kind:     "proxy",
 				Name:     item.Name,
-				ProxyKey: key,
+				ProxyKey: logKey,
 				Message:  createErr.Error(),
 			})
 			continue
@@ -417,7 +450,8 @@ func (h *AccountHandler) importData(ctx context.Context, req DataImportRequest) 
 
 		var proxyID *int64
 		if item.ProxyKey != nil && *item.ProxyKey != "" {
-			if id, ok := proxyKeyToID[*item.ProxyKey]; ok {
+			// 新导出文件的 proxy_key 为无密码导出键；旧文件为含密码全键——两级查找
+			if id, ok := matchImportProxy(*item.ProxyKey, *item.ProxyKey); ok {
 				proxyID = &id
 			} else {
 				result.AccountFailed++
