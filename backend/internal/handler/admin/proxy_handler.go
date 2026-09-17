@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -131,6 +132,39 @@ func (h *ProxyHandler) GetByID(c *gin.Context) {
 	}
 
 	response.Success(c, dto.ProxyFromServiceAdmin(proxy))
+}
+
+// GetProxyURL returns the full proxy URL (including credentials) for a single proxy.
+// 列表/详情接口不下发密码，复制完整代理 URL 等场景通过此端点按需获取。
+// GET /api/v1/admin/proxies/:id/url
+func (h *ProxyHandler) GetProxyURL(c *gin.Context) {
+	proxyID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid proxy ID")
+		return
+	}
+
+	proxy, err := h.adminService.GetProxy(c.Request.Context(), proxyID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"url": BuildProxyURL(proxy)})
+}
+
+// BuildProxyURL 拼接完整代理 URL（凭据按 userinfo 规则转义）。
+func BuildProxyURL(p *service.Proxy) string {
+	var auth string
+	switch {
+	case p.Username != "" && p.Password != "":
+		auth = url.UserPassword(p.Username, p.Password).String() + "@"
+	case p.Username != "":
+		auth = url.User(p.Username).String() + "@"
+	case p.Password != "":
+		auth = ":" + url.QueryEscape(p.Password) + "@"
+	}
+	return p.Protocol + "://" + auth + p.Host + ":" + strconv.Itoa(p.Port)
 }
 
 // Create handles creating a new proxy

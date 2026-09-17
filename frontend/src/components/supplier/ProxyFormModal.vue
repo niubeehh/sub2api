@@ -31,7 +31,13 @@
         </div>
         <div>
           <label class="input-label">密码</label>
-          <input v-model="form.password" type="text" class="input" />
+          <input
+            v-model="form.password"
+            type="text"
+            class="input"
+            :placeholder="proxy ? '留空则不修改密码' : ''"
+            @input="passwordDirty = true"
+          />
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4">
@@ -77,6 +83,8 @@ const props = defineProps<{ proxy?: any }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
 const saving = ref(false)
+// 编辑态密码原文不再回传：留空=保持不变，仅用户输入过才提交
+const passwordDirty = ref(false)
 
 const form = reactive({
   name: '',
@@ -98,7 +106,7 @@ onMounted(() => {
     form.host = props.proxy.host || ''
     form.port = props.proxy.port || 8080
     form.username = props.proxy.username || ''
-    form.password = props.proxy.password || ''
+    form.password = ''
     form.expires_at = props.proxy.expires_at ? Math.floor(new Date(props.proxy.expires_at).getTime() / 1000) : null
     form.fallback_mode = props.proxy.fallback_mode || 'none'
     form.backup_proxy_id = props.proxy.backup_proxy_id || null
@@ -109,17 +117,31 @@ onMounted(() => {
 async function handleSubmit() {
   saving.value = true
   try {
-    const data = {
+    const data: {
+      name: string
+      protocol: string
+      host: string
+      port: number
+      username: string
+      password?: string
+      expires_at: number | null
+      fallback_mode: string
+      backup_proxy_id: number | null
+      expiry_warn_days: number
+    } = {
       name: form.name,
       protocol: form.protocol,
       host: form.host,
       port: form.port,
       username: form.username,
-      password: form.password,
       expires_at: form.expires_at,
       fallback_mode: form.fallback_mode,
       backup_proxy_id: form.backup_proxy_id,
       expiry_warn_days: form.expiry_warn_days,
+    }
+    // 新建必带密码；编辑仅当用户输入过才提交（留空=保持原密码）
+    if (!props.proxy || passwordDirty.value) {
+      data.password = form.password
     }
     if (props.proxy) {
       await supplierAPI.updateProxy(props.proxy.id, data)

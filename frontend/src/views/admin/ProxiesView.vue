@@ -167,21 +167,10 @@
           </template>
 
           <template #cell-auth="{ row }">
-            <div v-if="row.username || row.password" class="flex items-center gap-1.5">
-              <div class="flex flex-col text-xs">
-                <span v-if="row.username" class="text-gray-700 dark:text-gray-200">{{ row.username }}</span>
-                <span v-if="row.password" class="font-mono text-gray-500 dark:text-gray-400">
-                  {{ visiblePasswordIds.has(row.id) ? row.password : '••••••' }}
-                </span>
-              </div>
-              <button
-                v-if="row.password"
-                type="button"
-                class="ml-1 rounded p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                @click.stop="visiblePasswordIds.has(row.id) ? visiblePasswordIds.delete(row.id) : visiblePasswordIds.add(row.id)"
-              >
-                <Icon :name="visiblePasswordIds.has(row.id) ? 'eyeOff' : 'eye'" size="sm" />
-              </button>
+            <div v-if="row.username || row.has_password" class="flex flex-col text-xs">
+              <span v-if="row.username" class="text-gray-700 dark:text-gray-200">{{ row.username }}</span>
+              <!-- 密码原文不下发到前端，仅静态掩码展示 -->
+              <span v-if="row.has_password" class="font-mono text-gray-500 dark:text-gray-400">••••••</span>
             </div>
             <span v-else class="text-sm text-gray-400">-</span>
           </template>
@@ -1046,7 +1035,6 @@ const editStatusOptions = computed(() => [
 ])
 
 const proxies = ref<Proxy[]>([])
-const visiblePasswordIds = reactive(new Set<number>())
 const copyMenuProxyId = ref<number | null>(null)
 const loading = ref(false)
 const searchQuery = ref('')
@@ -1432,7 +1420,8 @@ const handleEdit = (proxy: Proxy) => {
   editForm.host = proxy.host
   editForm.port = proxy.port
   editForm.username = proxy.username || ''
-  editForm.password = proxy.password || ''
+  // 密码原文不再回传；编辑时留空表示保持不变
+  editForm.password = ''
   editForm.status = proxy.status === 'expired' ? 'inactive' : proxy.status
   editForm.expires_at = proxy.expires_at ? proxy.expires_at.slice(0, 10) : ''
   editForm.fallback_mode = proxy.fallback_mode || 'none'
@@ -2041,35 +2030,46 @@ const closeAccountsModal = () => {
 }
 
 // ── Proxy URL copy ──
-function buildAuthPart(row: any): string {
-  const user = row.username ? encodeURIComponent(row.username) : ''
-  const pass = row.password ? encodeURIComponent(row.password) : ''
-  if (user && pass) return `${user}:${pass}@`
-  if (user) return `${user}@`
-  if (pass) return `:${pass}@`
-  return ''
+// 密码原文不下发到前端，完整 URL（含凭据）通过专用端点按需获取并缓存
+const proxyUrlCache = reactive(new Map<number, string>())
+
+async function ensureProxyUrl(row: any): Promise<string | null> {
+  const cached = proxyUrlCache.get(row.id)
+  if (cached) return cached
+  try {
+    const url = await adminAPI.proxies.getUrl(row.id)
+    proxyUrlCache.set(row.id, url)
+    return url
+  } catch (error) {
+    console.error('Failed to load proxy URL:', error)
+    appStore.showError(t('admin.proxies.failedToCopyUrl'))
+    return null
+  }
 }
 
-function buildProxyUrl(row: any): string {
-  return `${row.protocol}://${buildAuthPart(row)}${row.host}:${row.port}`
-}
-
-function getCopyFormats(row: any) {
-  const hasAuth = row.username || row.password
-  const fullUrl = buildProxyUrl(row)
-  const formats = [
-    { label: fullUrl, value: fullUrl },
-  ]
-  if (hasAuth) {
-    const withoutProtocol = fullUrl.replace(/^[^:]+:\/\//, '')
-    formats.push({ label: withoutProtocol, value: withoutProtocol })
+function copyFormatsFromUrl(row: any, fullUrl: string | null) {
+  const formats: Array<{ label: string; value: string }> = []
+  if (fullUrl) {
+    formats.push({ label: fullUrl, value: fullUrl })
+    if (row.username || row.has_password) {
+      const withoutProtocol = fullUrl.replace(/^[^:]+:\/\//, '')
+      formats.push({ label: withoutProtocol, value: withoutProtocol })
+    }
   }
   formats.push({ label: `${row.host}:${row.port}`, value: `${row.host}:${row.port}` })
   return formats
 }
 
-function copyProxyUrl(row: any) {
-  copyToClipboard(buildProxyUrl(row), t('admin.proxies.urlCopied'))
+function getCopyFormats(row: any) {
+  void ensureProxyUrl(row)
+  return copyFormatsFromUrl(row, proxyUrlCache.get(row.id) ?? null)
+}
+
+async function copyProxyUrl(row: any) {
+  const url = await ensureProxyUrl(row)
+  if (url) {
+    copyToClipboard(url, t('admin.proxies.urlCopied'))
+  }
   copyMenuProxyId.value = null
 }
 

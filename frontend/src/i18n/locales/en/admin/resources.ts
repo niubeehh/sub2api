@@ -75,6 +75,7 @@ export default {
       dataExportFailed: 'Failed to export data',
       copyProxyUrl: 'Copy Proxy URL',
       urlCopied: 'Proxy URL copied',
+      failedToCopyUrl: 'Failed to load proxy URL',
       searchProxies: 'Search proxies...',
       allProtocols: 'All Protocols',
       allStatus: 'All Status',

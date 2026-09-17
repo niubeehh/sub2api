@@ -938,7 +938,8 @@ export interface Proxy {
   host: string
   port: number
   username: string | null
-  password?: string | null
+  /** 密码原文不下发；true 表示已设置密码 */
+  has_password?: boolean
   status: 'active' | 'inactive' | 'expired'
   account_count?: number // Number of accounts using this proxy
   latency_ms?: number

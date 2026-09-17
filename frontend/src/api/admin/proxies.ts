@@ -264,6 +264,17 @@ export async function importData(payload: {
   return data
 }
 
+/**
+ * Get the full proxy URL (including credentials) for a single proxy.
+ * 列表接口不下发密码原文，复制完整 URL 等场景通过此端点按需获取。
+ * @param id - Proxy ID
+ * @returns Full proxy URL, e.g. socks5://user:pass@host:port
+ */
+export async function getUrl(id: number): Promise<string> {
+  const { data } = await apiClient.get<{ url: string }>(`/admin/proxies/${id}/url`)
+  return data.url
+}
+
 export const proxiesAPI = {
   list,
   getAll,
@@ -280,7 +291,8 @@ export const proxiesAPI = {
   batchCreate,
   batchDelete,
   exportData,
-  importData
+  importData,
+  getUrl
 }
 
 export default proxiesAPI
