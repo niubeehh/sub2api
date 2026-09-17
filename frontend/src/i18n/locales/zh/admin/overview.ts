@@ -488,6 +488,7 @@ export default {
       admin: '管理员',
       user: '用户',
       supplier: '供应商',
+      readonly: '只读',
       disabled: '禁用',
       email: '邮箱',
       password: '密码',
@@ -569,7 +570,8 @@ export default {
       roles: {
         admin: '管理员',
         user: '用户',
-        supplier: '供应商'
+        supplier: '供应商',
+        readonly: '只读'
       },
       form: {
         emailLabel: '邮箱',

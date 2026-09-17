@@ -104,6 +104,7 @@ const submitting = ref(false); const passwordCopied = ref(false)
 const roleOptions = computed(() => [
   { value: 'user', label: t('admin.users.roles.user') },
   { value: 'supplier', label: t('admin.users.roles.supplier') },
+  { value: 'readonly', label: t('admin.users.roles.readonly') },
   { value: 'admin', label: t('admin.users.roles.admin') }
 ])
 const form = reactive({

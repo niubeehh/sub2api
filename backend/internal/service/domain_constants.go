@@ -21,6 +21,7 @@ const (
 	RoleAdmin    = domain.RoleAdmin
 	RoleUser     = domain.RoleUser
 	RoleSupplier = domain.RoleSupplier
+	RoleReadOnly = domain.RoleReadOnly
 )
 
 // Affiliate rebate settings

@@ -70,6 +70,18 @@ func (m *mockProxyRepoForOAuth) ListByIDs(ctx context.Context, ids []int64) ([]P
 func (m *mockProxyRepoForOAuth) Update(ctx context.Context, proxy *Proxy) error {
 	panic("Update not implemented")
 }
+func (m *mockProxyRepoForOAuth) GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*Proxy, error) {
+	panic("not impl")
+}
+func (m *mockProxyRepoForOAuth) ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]Proxy, *pagination.PaginationResult, error) {
+	panic("not impl")
+}
+func (m *mockProxyRepoForOAuth) ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]ProxyWithAccountCount, *pagination.PaginationResult, error) {
+	panic("not impl")
+}
+func (m *mockProxyRepoForOAuth) ListActiveByOwner(ctx context.Context, ownerID int64) ([]Proxy, error) {
+	panic("not impl")
+}
 func (m *mockProxyRepoForOAuth) Delete(ctx context.Context, id int64) error {
 	panic("Delete not implemented")
 }

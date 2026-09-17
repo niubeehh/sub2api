@@ -15,6 +15,7 @@ const (
 	RoleAdmin    = "admin"
 	RoleUser     = "user"
 	RoleSupplier = "supplier" // 供应商角色：提供上游账号，可观测自己名下账号的消耗
+	RoleReadOnly = "readonly" // 只读角色：可查看管理面全部数据，禁止任何修改操作
 )
 
 // Platform constants

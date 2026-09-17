@@ -488,6 +488,7 @@ export default {
       admin: 'Admin',
       user: 'User',
       supplier: 'Supplier',
+      readonly: 'Read-Only',
       disabled: 'Disabled',
       email: 'Email',
       password: 'Password',
@@ -683,7 +684,8 @@ export default {
       roles: {
         admin: 'Admin',
         user: 'User',
-        supplier: 'Supplier'
+        supplier: 'Supplier',
+        readonly: 'Read-Only'
       },
       // Settings Dropdowns
       filterSettings: 'Filter Settings',

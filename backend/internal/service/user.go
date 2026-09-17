@@ -78,6 +78,12 @@ func (u *User) IsSupplier() bool {
 	return u.Role == RoleSupplier
 }
 
+// IsReadOnly 返回当前用户是否为只读角色。
+// 只读角色可查看管理面全部数据，但禁止一切修改操作（由 ReadOnlyGuard 中间件强制）。
+func (u *User) IsReadOnly() bool {
+	return u.Role == RoleReadOnly
+}
+
 func (u *User) IsActive() bool {
 	return u.Status == StatusActive
 }

@@ -111,8 +111,8 @@ func normalizeUserRole(role, fallback string) (string, error) {
 	if role == "" {
 		return fallback, nil
 	}
-	if role != RoleAdmin && role != RoleUser && role != RoleSupplier {
-		return "", fmt.Errorf("invalid role: %q (must be %s, %s or %s)", role, RoleAdmin, RoleUser, RoleSupplier)
+	if role != RoleAdmin && role != RoleUser && role != RoleSupplier && role != RoleReadOnly {
+		return "", fmt.Errorf("invalid role: %q (must be %s, %s, %s or %s)", role, RoleAdmin, RoleUser, RoleSupplier, RoleReadOnly)
 	}
 	return role, nil
 }
@@ -256,8 +256,8 @@ func (s *adminServiceImpl) UpdateUser(ctx context.Context, id int64, input *Upda
 			return nil, err
 		}
 		// 防锁死保护：不允许降级系统中最后一个管理员（自我降级已在 handler 层拦截，
-		// 此处兜底覆盖跨管理员互降导致零 admin 的场景）。
-		if user.Role == RoleAdmin && role == RoleUser {
+		// 此处兜底覆盖跨管理员互降导致零 admin 的场景；降级为 user/supplier/readonly 均受保护）。
+		if user.Role == RoleAdmin && role != RoleAdmin {
 			if err := s.ensureNotLastAdmin(ctx); err != nil {
 				return nil, err
 			}

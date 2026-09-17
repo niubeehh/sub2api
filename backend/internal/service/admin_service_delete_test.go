@@ -350,6 +350,22 @@ func (s *proxyRepoStub) GetByID(ctx context.Context, id int64) (*Proxy, error) {
 	panic("unexpected GetByID call")
 }
 
+func (s *proxyRepoStub) GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*Proxy, error) {
+	panic("unexpected GetByIDAndOwner call")
+}
+
+func (s *proxyRepoStub) ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]Proxy, *pagination.PaginationResult, error) {
+	panic("unexpected ListByOwner call")
+}
+
+func (s *proxyRepoStub) ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]ProxyWithAccountCount, *pagination.PaginationResult, error) {
+	panic("unexpected ListByOwnerWithAccountCount call")
+}
+
+func (s *proxyRepoStub) ListActiveByOwner(ctx context.Context, ownerID int64) ([]Proxy, error) {
+	panic("unexpected ListActiveByOwner call")
+}
+
 func (s *proxyRepoStub) ListByIDs(ctx context.Context, ids []int64) ([]Proxy, error) {
 	panic("unexpected ListByIDs call")
 }

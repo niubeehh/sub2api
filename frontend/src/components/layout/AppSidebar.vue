@@ -32,7 +32,7 @@
     <!-- Navigation -->
     <nav ref="sidebarNavRef" class="sidebar-nav scrollbar-hide">
       <!-- Admin View: Admin menu first, then personal menu -->
-      <template v-if="isAdmin">
+      <template v-if="showAdminMenu">
         <!-- Admin Section -->
         <div class="sidebar-section">
           <template v-for="item in adminNavItems" :key="item.path">
@@ -266,12 +266,13 @@ const { canUseBatchImage, refreshBatchImageAccess } = useBatchImageAccess()
 
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
-const isAdmin = computed(() => authStore.isAdmin)
 const isSupplier = computed(() => authStore.isSupplier)
+// 只读角色可查看管理面菜单；写操作由后端 ReadOnlyGuard 拦截
+const showAdminMenu = computed(() => authStore.isAdmin || authStore.isReadOnly)
 const sidebarNavRef = ref<HTMLElement | null>(null)
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
-const homePath = computed(() => (isAdmin.value ? '/admin/dashboard' : isSupplier.value ? '/supplier/dashboard' : '/dashboard'))
+const homePath = computed(() => (showAdminMenu.value ? '/admin/dashboard' : isSupplier.value ? '/supplier/dashboard' : '/dashboard'))
 
 // Per-group expand/collapse overrides. A group with no entry follows the
 // automatic behavior (expanded while the active route is one of its children);
@@ -973,7 +974,7 @@ if (
 
 // Fetch admin settings (for feature-gated nav items like Ops).
 watch(
-  isAdmin,
+  showAdminMenu,
   (v) => {
     if (v) {
       adminSettingsStore.fetch()
@@ -984,7 +985,7 @@ watch(
 
 onMounted(() => {
   void refreshBatchImageAccess()
-  if (isAdmin.value) {
+  if (showAdminMenu.value) {
     adminSettingsStore.fetch()
   }
   // Restore sidebar scroll position after route change re-mounts the component

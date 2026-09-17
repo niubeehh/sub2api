@@ -100,6 +100,11 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.role === 'supplier'
   })
 
+  // 只读角色：可查看管理面全部页面，禁止修改操作（后端 ReadOnlyGuard 强制拦截）
+  const isReadOnly = computed(() => {
+    return user.value?.role === 'readonly'
+  })
+
   const isSimpleMode = computed(() => runMode.value === 'simple')
   const hasPendingAuthSession = computed(() => pendingAuthSession.value !== null)
 
@@ -503,6 +508,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     isSupplier,
+    isReadOnly,
     isSimpleMode,
     hasPendingAuthSession,
 

@@ -24,6 +24,7 @@ const {
   getBatchUserAttributes: vi.fn()
 }))
 
+vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ isAdmin: true, isReadOnly: false }) }))
 vi.mock('@/api/admin', () => ({
   adminAPI: {
     users: {

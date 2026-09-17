@@ -13,6 +13,7 @@
           />
           <AccountTableActions
             :loading="loading"
+            :hide-create="authStore.isReadOnly"
             @refresh="handleManualRefresh"
             @create="showCreate = true"
           >

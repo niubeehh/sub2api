@@ -838,8 +838,9 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
 }
 
 // 根据用户角色返回默认首页路径
-function defaultHomePath(isAdmin: boolean, isSupplier: boolean): string {
-  if (isAdmin) return '/admin/dashboard'
+// isAdminOrReadOnly: admin 与只读角色均进入管理面首页
+function defaultHomePath(isAdminOrReadOnly: boolean, isSupplier: boolean): string {
+  if (isAdminOrReadOnly) return '/admin/dashboard'
   if (isSupplier) return '/supplier/dashboard'
   return '/dashboard'
 }
@@ -861,7 +862,7 @@ router.beforeEach(async (to, _from, next) => {
   const adminSettingsStore = useAdminSettingsStore()
   const customMenuItems = [
     ...(appStore.cachedPublicSettings?.custom_menu_items ?? []),
-    ...(authStore.isAdmin ? adminSettingsStore.customMenuItems : []),
+    ...(authStore.isAdmin || authStore.isReadOnly ? adminSettingsStore.customMenuItems : []),
   ]
   document.title = resolveRouteDocumentTitle(to, appStore.siteName, customMenuItems)
 
@@ -893,7 +894,7 @@ router.beforeEach(async (to, _from, next) => {
         return
       }
       // Admin users go to admin dashboard, supplier users go to supplier dashboard, regular users go to user dashboard
-      next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+      next(defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier))
       return
     }
     // Model Plaza:公开路由但受「启用开关 + 可选强制登录」双重控制(后端同口径 fail-closed)
@@ -910,7 +911,7 @@ router.beforeEach(async (to, _from, next) => {
       if (appStore.publicSettingsLoaded && plazaSettings?.model_plaza_enabled === false) {
         next(
           authStore.isAuthenticated
-            ? defaultHomePath(authStore.isAdmin, authStore.isSupplier)
+            ? defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier)
             : '/home'
         )
         return
@@ -954,16 +955,16 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-  // Check admin requirement
-  if (requiresAdmin && !authStore.isAdmin) {
+  // Check admin requirement（只读角色可进入管理面查看，写操作由后端拦截）
+  if (requiresAdmin && !authStore.isAdmin && !authStore.isReadOnly) {
     // User is authenticated but not admin, redirect to appropriate dashboard
-    next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+    next(defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier))
     return
   }
 
   // Check supplier requirement (admin 也可访问 supplier 路由)
   if (requiresSupplier && !authStore.isAdmin && !authStore.isSupplier) {
-    next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+    next(defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier))
     return
   }
 
@@ -1000,7 +1001,7 @@ router.beforeEach(async (to, _from, next) => {
     appStore.publicSettingsLoaded &&
     appStore.cachedPublicSettings?.payment_enabled === false
   ) {
-    next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+    next(defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier))
     return
   }
 
@@ -1009,7 +1010,7 @@ router.beforeEach(async (to, _from, next) => {
     appStore.publicSettingsLoaded &&
     appStore.cachedPublicSettings?.risk_control_enabled === false
   ) {
-    next(authStore.isAdmin ? '/admin/settings' : defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+    next(authStore.isAdmin ? '/admin/settings' : defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier))
     return
   }
 
@@ -1034,14 +1035,14 @@ router.beforeEach(async (to, _from, next) => {
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
       // 简易模式下访问受限页面,重定向到仪表板
-      next(defaultHomePath(authStore.isAdmin, authStore.isSupplier))
+      next(defaultHomePath(authStore.isAdmin || authStore.isReadOnly, authStore.isSupplier))
       return
     }
   }
 
   // Backend mode: admin and supplier get full access, other users blocked
   if (appStore.backendModeEnabled) {
-    if (authStore.isAuthenticated && (authStore.isAdmin || authStore.isSupplier)) {
+    if (authStore.isAuthenticated && (authStore.isAdmin || authStore.isSupplier || authStore.isReadOnly)) {
       next()
       return
     }

@@ -61,6 +61,19 @@ func TestAdminService_CreateUser_WithSupplierRole(t *testing.T) {
 	require.Equal(t, RoleSupplier, user.Role)
 }
 
+func TestAdminService_CreateUser_WithReadOnlyRole(t *testing.T) {
+	repo := &userRepoStub{nextID: 34}
+	svc := &adminServiceImpl{userRepo: repo}
+
+	user, err := svc.CreateUser(context.Background(), &CreateUserInput{
+		Email:    "viewer@test.com",
+		Password: "strong-pass",
+		Role:     RoleReadOnly,
+	})
+	require.NoError(t, err)
+	require.Equal(t, RoleReadOnly, user.Role)
+}
+
 func TestAdminService_UpdateUser_PromoteToAdmin(t *testing.T) {
 	base := &userRepoStub{user: &User{ID: 42, Email: "u@example.com", Role: RoleUser}}
 	repo := &rpmUserRepoStub{userRepoStub: base}

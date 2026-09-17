@@ -2077,6 +2077,22 @@ func (stubProxyRepo) Create(ctx context.Context, proxy *service.Proxy) error {
 	return errors.New("not implemented")
 }
 
+func (stubProxyRepo) GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*service.Proxy, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (stubProxyRepo) ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]service.Proxy, *pagination.PaginationResult, error) {
+	return nil, nil, errors.New("not implemented")
+}
+
+func (stubProxyRepo) ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]service.ProxyWithAccountCount, *pagination.PaginationResult, error) {
+	return nil, nil, errors.New("not implemented")
+}
+
+func (stubProxyRepo) ListActiveByOwner(ctx context.Context, ownerID int64) ([]service.Proxy, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (stubProxyRepo) GetByID(ctx context.Context, id int64) (*service.Proxy, error) {
 	return nil, service.ErrProxyNotFound
 }
@@ -2564,6 +2580,10 @@ type stubUsageLogRepo struct {
 
 func newStubUsageLogRepo() *stubUsageLogRepo {
 	return &stubUsageLogRepo{userLogs: make(map[int64][]service.UsageLog)}
+}
+
+func (r *stubUsageLogRepo) UpdateAccountOwnerID(ctx context.Context, accountID int64, ownerID *int64) error {
+	return nil
 }
 
 func (r *stubUsageLogRepo) SetUserLogs(userID int64, logs []service.UsageLog) {

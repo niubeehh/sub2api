@@ -782,7 +782,19 @@ func (m *mockGeminiProxyRepo) ListByIDs(ctx context.Context, ids []int64) ([]Pro
 	panic("not impl")
 }
 func (m *mockGeminiProxyRepo) Update(ctx context.Context, proxy *Proxy) error { panic("not impl") }
-func (m *mockGeminiProxyRepo) Delete(ctx context.Context, id int64) error     { panic("not impl") }
+func (m *mockGeminiProxyRepo) GetByIDAndOwner(ctx context.Context, id, ownerID int64) (*Proxy, error) {
+	panic("not impl")
+}
+func (m *mockGeminiProxyRepo) ListByOwner(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]Proxy, *pagination.PaginationResult, error) {
+	panic("not impl")
+}
+func (m *mockGeminiProxyRepo) ListByOwnerWithAccountCount(ctx context.Context, params pagination.PaginationParams, ownerID int64, protocol, status, search string) ([]ProxyWithAccountCount, *pagination.PaginationResult, error) {
+	panic("not impl")
+}
+func (m *mockGeminiProxyRepo) ListActiveByOwner(ctx context.Context, ownerID int64) ([]Proxy, error) {
+	panic("not impl")
+}
+func (m *mockGeminiProxyRepo) Delete(ctx context.Context, id int64) error { panic("not impl") }
 func (m *mockGeminiProxyRepo) List(ctx context.Context, params pagination.PaginationParams) ([]Proxy, *pagination.PaginationResult, error) {
 	panic("not impl")
 }

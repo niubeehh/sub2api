@@ -82,7 +82,7 @@
             <button v-if="!authStore.isSupplier" @click="showExportDataDialog = true" class="btn btn-secondary">
               {{ selectedCount > 0 ? t('admin.proxies.dataExportSelected') : t('admin.proxies.dataExport') }}
             </button>
-            <button @click="showCreateModal = true" class="btn btn-primary">
+            <button v-if="!authStore.isReadOnly" @click="showCreateModal = true" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.proxies.createProxy') }}
             </button>
@@ -338,7 +338,7 @@
             <EmptyState
               :title="t('admin.proxies.noProxiesYet')"
               :description="t('admin.proxies.createFirstProxy')"
-              :action-text="t('admin.proxies.createProxy')"
+              :action-text="authStore.isReadOnly ? undefined : t('admin.proxies.createProxy')"
               @action="showCreateModal = true"
             />
           </template>
